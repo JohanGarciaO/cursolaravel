@@ -1,0 +1,242 @@
+******************************************************************************
+LARAVEL
+
+// Diretório que armazena todas as entidades do Laravel
+use Illuminate\Http\Request
+
+Laravel: nada mais é do que uma abstração de códigos em comum (Utiliza o padrão MVC)
+
+O Laravel tem diversos serviços já prontos para serem utilizados, estes serviços ficam na pasta /vendor/laravel/framework/src
+
+******************************************************************************
+ROTAS
+
+// Verbo GET permite obter o request de uma requisição
+Route::get('/', function () {
+    return view('welcome');
+});
+
+// Verbo ANY não muito comum mas permite qualquer tipo de requisição http nesta rota
+Route::any('/any', function () {
+    return "Permite todo tipo de acesso HTTP (get, post, put, delete...)";
+});
+
+// Verbo MATCH é o inverso do ANY, o match permite apenas requisições dos tipos predefinidas no primeiro parâmetro
+Route::match(['put', 'post'], '/match', function () {
+    return "Permite apenas acessos definidos";
+});
+
+// Passagem de parâmetro nas rotas (sem interrogação aquele parâmetro fica obrigatório)
+Route::get('produto/{id}/{cat?}', function ($id, $cat = 'Categoria não definida') {
+    return "O id do produto é: $id<br>A categoria é: $cat";
+});
+
+// Redirecionamento de Rotas
+// Route::get('sobre', function () {
+//     return redirect('/empresa');
+// });
+
+// Redirecionamento de Rotas usando o verbo REDIRECT
+Route::redirect('/sobre', '/empresa');
+
+// Renderiza uma view sem precisar colocar dentro de uma função de callback de uma rota do tipo GET
+Route::view('/empresa', '/site/empresa');
+
+// ROTAS NOMEADAS -> é feito o redirecionamento através do NOME da rota e não da rota em si, desta maneira, se a rota for modificada e o nome não, o redirecionamento continuará sendo feito para o novo endereço de rota
+Route::get('/timesnownews', function () {
+    return view('news');
+})->name('noticias');
+
+Route::get('/novidades', function () {
+    return redirect()->route('noticias');
+});
+
+******************************************************************************
+GRUPO DE ROTAS
+
+// Agrupar todo mundo pelo prefixo da rota
+Route::prefix('admin')->group(function () {
+    Route::get('/dashboard', function () {
+        return "dashboard";
+    });
+
+    Route::get('/users', function () {
+        return "users";
+    });
+
+    Route::get('/clientes', function () {
+        return "clientes";
+    });
+});
+
+// Agrupar todo mundo pelo prefixo do nome
+Route::name('admin.')->group(function () {
+    Route::get('admin/dashboard', function () {
+        return "dashboard";
+    })->name('dashboard');
+
+    Route::get('admin/users', function () {
+        return "users";
+    })->name('users');
+
+    Route::get('admin/clientes', function () {
+        return "clientes";
+    })->name('clientes');
+});
+
+// Agrupar todo mundo pelo tanto prefixo da rota quanto do nome, ou qualquer outro tipo de agrupamento (lembrando que a chave para o prefixo do nome utilizando o Route::name é o name mas utilizando o group é o "as")
+Route::group([
+    'prefix' => 'admin',
+    'as' => 'admin.'
+], function () {
+    Route::get('dashboard', function () {
+        return "dashboard";
+    })->name('dashboard');
+
+    Route::get('users', function () {
+        return "users";
+    })->name('users');
+
+    Route::get('clientes', function () {
+        return "clientes";
+    })->name('clientes');
+});
+
+******************************************************************************
+CONTROLLERS
+
+Para criar um Controller (nome em Pascal Case): php artisan make:controller ProdutoController
+
+Dentro do controller você escreve suas functions como por exemplo:
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class ProdutoController extends Controller
+{
+    public function index()
+    {
+        return "index";
+    }
+}
+
+
+// Primeiro importa o Controller com o namespace
+use App\Http\Controllers\ProdutoController;
+
+// Depois cria uma rota onde o primeiro parâmetro é a rota e o segundo é o controller que vai responder por essa rota
+Route::get('/', [ProdutoController::class, 'index']);
+
+OBS: Os controllers utilizam o serviço Requests do Laravel, que:
+Request: é um recurso para obter uma instância via injeção de dependência da solicitação http
+
+// Passar parâmetros para responder um método de vizualização de produto
+Route::get('/produto/{id?}', [ProdutoController::class, 'show'])->name('produto.show');
+
+Obs: lembre se criar o método no controller, se quiser deixar opcional colocar o interrogação pós parâmetro, e definifir o valor nos parâmetros de ciração do método no controller
+public function show($id = 0)
+    {
+        return "Show: " . $id;
+    }
+
+Obs: lembrando que é altamente recomendado definir nomes para as rotas
+
+
+******************************************************************************
+RESOURCE
+
+Alguns recursos são tão genéricos que o framework (laravel, que busca ganhho de tempo e agilidade) já considera disponibilizar com apenas uma linha de código,
+Isso é o exemplo dos RESOURCES
+
+Vamos apagar o ProdutoController antigo e criar novamente, agora com: php artisan make:controller ProdutoController --resource
+
+Desta maneira o controller já vai vir com diversos métodos já pré configurados. São eles:
+
+- index: para listar
+- create: exibir um formulário
+- store: salvar os registros que vamos receber via injeção de dependências através do Request
+- show: exibir um recurso específico pelo id
+- edit: exibir um formulário para edição de algum recurso
+- update: para atualizar algum recurso
+- destroy: para a gente remover algum recurso da base de dados
+
+Logo, o Resource é uma mão na roda para manipulação de banco de dados
+
+// Definindo a rota de um Resouce no web.php
+Route::resource('produtos', ProdutoController::class);
+
+Só em ir no navegador de colocar na rota Produtos já será retornado o método index sem precisar especificar
+
+******************************************************************************
+COMANDOS ROUTE
+
+php artisan route:list -> PARA LISTAR AS ROTAS DE SUA APLICAÇÃO
+route:cache -> Vai criar um arquivo de cache de rota para deixar a resposta de requisição mais rápida (não recomendado trabalhando em produção)
+route:clear -> Remove o arquivo de Cache de Rotas
+
+******************************************************************************
+CONEXÃO COM O BANCO DE DADOS
+
+No .env tem uma sessão de variáveis com um prefixo DB_ (elas representam os dados de conexão do banco de dados)
+
+Também existe o arquivo config\database.php que possui um setup com vários valores defauls prontos para serem usados caso não sejem setados na .env
+
+Obs: agora eu criei o DB cursolaravel através do HeideSQL e alterei o .env
+
+******************************************************************************
+MIGRATIONS -> é um recurso utilizado para manipulação de dados no DB
+
+Na pasta database/migrations podemos observar que já vieram alguns arquivos prontos
+
+2014_10_12_000000_create_users_table.php: cria uma tabela já de usuários
+2014_10_12_100000_create_password_resets_table.php: reseta senha caso precise
+2019_08_19_000000_create_failed_jobs_table.php: usado quando trabalhando com Fillas
+2019_12_14_000001_create_personal_access_tokens_table.php: para trabalharmos com token
+
+Obs.: O Laravel já trouxe esses quatro migrations prontos, mas é importante entender que esses migrations PRECISAM ser CRIADOS.
+
+Portanto, observemos sua estrutura:
+
+Todos possuem um método UP e um método DOWN,
+
+UP: acionado quando o migration é executado (meio que cria toda a estrutura)
+
+DOWN: acionado quando revertemos um migration
+
+
+Podemos observar no migration que veio pronto de criação de tabela de usuários, que está sendo usádo o Método CREATE do Serviço SCHEMA
+Ele está criando uma tabela chamada users e definindo as colunas desta tabela
+
+public function up(){
+    Schema::create('users', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->timestamp('email_verified_at')->nullable();
+        $table->string('password');
+        $table->rememberToken();
+        $table->timestamps();
+    });
+}
+
+
+Comandos migrations:
+
+php artisan migrate -> executa todos os migrations (cria todas as tabelas)
+migrate:fresh
+migrate:install 
+migrate:refresh  
+migrate:reset 
+migrate:rollback -> desfaz o último migrate (a última migração)
+migrate:status -> exibe o status de nossos migrations (o nome e se foi executado ou não)
+
+E para criar nossas tabelas? Precisamos criar um migration (para o nome do migration use a convenção de Snake Case)
+php artisan make:migration create_produtos_table
+
+Ele vai criar o Migration com a estrutura prontinha, depois é só completar os campos
+Obs.: se eu tivesse usado um nome aleatório (sem o prefixo do nome create e o sufixo table) o migration não ia identificar o que você precisa e entregaria os métodos up e down vazios
+
+Mas se quiser criar um migration sem usar o prefixo e sufixo do nome e ainda assim ele vir com algumas coisas prontas como o outro, podemos criar o migrate da seguinte maneira:
+php artisan make:migration produtos --create=produtos
