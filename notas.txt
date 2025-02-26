@@ -225,10 +225,11 @@ public function up(){
 Comandos migrations:
 
 php artisan migrate -> executa todos os migrations (cria todas as tabelas)
-migrate:fresh
+
+migrate:fresh -> deleta todas as tabelas e depois reexecuta todas as migrações
 migrate:install 
-migrate:refresh  
-migrate:reset 
+migrate:refresh -> reseta e já reexecuta, ele meio que dar um reset e depois executa tudo
+migrate:reset -> reverte todas as migrações (é tipo um rollback, mas de todas as migrações)
 migrate:rollback -> desfaz o último migrate (a última migração)
 migrate:status -> exibe o status de nossos migrations (o nome e se foi executado ou não)
 
@@ -240,3 +241,41 @@ Obs.: se eu tivesse usado um nome aleatório (sem o prefixo do nome create e o s
 
 Mas se quiser criar um migration sem usar o prefixo e sufixo do nome e ainda assim ele vir com algumas coisas prontas como o outro, podemos criar o migrate da seguinte maneira:
 php artisan make:migration produtos --create=produtos
+
+Além de criar, também podemos editar estas tabelas, renomear , excluir...
+
+Vamos criar um migration para alterar o nome da tabela produtudos:
+    - php artisan make:migration alterar_nome_tabela_produtos
+    - No método up() do migrate vamos colocar Schema::rename('produtos', 'produto'); e ao executar esse migrate o nome da tabela será renomeado
+
+Os migrates são feitos para serem executados de forma sequencial, então uns podem depender de outros
+Ex: não daria pra mudar o nome da tabela produtos se a tabela já não existisse previamente
+
+Também podemos criar um migrate para apagar uma tabela, dentro do up vamos usar Schema::dropIfExists('produto');
+
+Também conseguimos modificar as colunas via migrations, mas precisamos instalar uma dependência chamada doctrine/dbal (caso a versão do Laravel seja inferior a 11)
+
+Copnseguimos criar tabelas e definir colunas, mas para modificar as colunas precisamos dessa lib
+
+********* MODIFICANDO COLUNAS
+
+Vou criar duas colunas no migration da tabela produtos
+    $table->string('nomee');
+    $table->string('nomecompleto');
+
+Agora vamos modificar a coluna 'nomee' para 'nome' e apagar a outra
+
+    Dentro do migration, vamos no Up() e definimos em Schema::table a tabela que vamos estar trabalhando e uma função de callback com o Blueprint passando para o objeto $table
+    Obs: meio que o Blueprint gera uma instância da tabela e coloca no objeto table, modificamos esse objeto e depois o Blueprint efetiva as mudanças
+
+    Blueprint: recurso de geração de código do Laravel
+
+    Agora camos renomear a coluna e apagar a outra, o código fica:
+
+    public function up()
+    {
+        Schema::table('produtos', function (Blueprint $table) {
+            $table->renameColumn('nomee', 'nome');
+            $table->dropColumn('nomecompleto');
+        });
+    }
