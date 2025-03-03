@@ -8,6 +8,8 @@ Laravel: nada mais é do que uma abstração de códigos em comum (Utiliza o pad
 
 O Laravel tem diversos serviços já prontos para serem utilizados, estes serviços ficam na pasta /vendor/laravel/framework/src
 
+
+
 ******************************************************************************
 ROTAS
 
@@ -147,7 +149,7 @@ Obs: lembrando que é altamente recomendado definir nomes para as rotas
 ******************************************************************************
 RESOURCE
 
-Alguns recursos são tão genéricos que o framework (laravel, que busca ganhho de tempo e agilidade) já considera disponibilizar com apenas uma linha de código,
+Alguns recursos são tão genéricos que o framework (laravel, que busca ganho de tempo e agilidade) já considera disponibilizar com apenas uma linha de código,
 Isso é o exemplo dos RESOURCES
 
 Vamos apagar o ProdutoController antigo e criar novamente, agora com: php artisan make:controller ProdutoController --resource
@@ -279,3 +281,82 @@ Agora vamos modificar a coluna 'nomee' para 'nome' e apagar a outra
             $table->dropColumn('nomecompleto');
         });
     }
+
+******************************************************************************
+MODELS
+
+É a representação de uma entidade
+
+Então vamos criar uma model com: php artisan make:model produto
+
+Depois podemos criar um registro aleatório no banco na tabela produtos e vizualizar no index de nosso controle,
+para isto, devemos ir na index de nosso ProdutoController e definir:
+
+    $produtos = \App\Models\Produto::all();
+    return dd($produtos);
+
+Primeiro instanciamos o objeto produto usando o método all() que pegou todos os dados da tabela produto
+depois retornamos a função dd($produto) passando o objeto, esta função debuga os dados de nosso objeto na tela
+
+Este é um método do Eloquent (que é um ORM do Laravel)
+
+ORM -> Object Relational Model, serve para mapear de modo automático uma tabela de um banco de dados para dentro de uma classe
+
+OU SEJA, O MODEL SERVE PARA REPRESENTAR UMA TABELA (ENTIDADE)
+
+Obs.: Observe que o Laravel é tão inteligente que nossa tabela se chama "produtos", criamos um model chamado "Produto" e ainda assim ele relacionou com a tabela.
+MAS, caso não tivesse conseguido relacionar, deveriamos especificar o nome da tabela com o:
+
+    - protected $table = 'produtos';
+
+Alí na index do controller onde definimos o objeto $produtos passando o Path do Model, podemos resumir e colocar só Produto
+Para isso basta colocar no início do arquivo um namespace com: use \App\Models\Produto;
+
+******************************************************************************
+CRIANDO TABELAS USERS, CATEGORIAS E PRODUTOS
+
+1. Vamos deletar o migrate update_produtos
+2. Vamos de fato definir a estrutura de nossa tabela
+
+    public function up()
+    {
+        Schema::create('produtos', function (Blueprint $table) {
+            $table->id(); // Cria um campo id (autoincrement, inteiro e primary key)
+            $table->string('nome'); // campo nome do tipo string
+            $table->text('descricao'); // campo descricao do tipo text
+            $table->double('preco', 10, 2); // campo preco do tipo double com 2 casas decimais
+            $table->string('slug'); // campo slub do tipo string
+            $table->string('imagem'); // campo imagem para armazenar o path de uma imagem
+            $table->unsignedBigInteger('id_user'); // campo que vai armazenar o valor da FK
+            $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade'); // Cria o relacionamento da FK dizendo onde tá referenciando e qual tipo de relacionamento, neste caso 'cascade'
+            $table->timestamps(); // cria dois campos: created_at e updated_at
+        });
+    }
+
+    Como o Relacionamento é cascade se um usuário for deletado todos os produtos daquele usuário também será deletado
+    
+    Quabdo usamos estes métodos nas colunas/relacionamentos estamos encadeando uma propriedade...
+    EX: 
+        ->unique(): define aquela coluna com de valor único
+        ->nullable(): permite valores nulos
+3. Vamos criar os Models e Migrations necessários
+
+    - Podemos criar tanto o model quanto o migration com um único comando:
+        php artisan make:model Categoria --migration
+
+    - Ou até mesmo ainda um controller (e do tipo resource se quiser):
+        php artisan make:model Categoria --migration --controller --resource
+
+    - Ou, mais resumidamente ainda:
+        php artisan make:model Categoria -m -cr
+
+    - Ou:
+        php artisan make:model Categoria -mcr
+
+4. Agora vou implementar um nome e uma descrição no migrate da categoria
+5. Precisamos nos atentar ao fato de que os migrations foram feitos para serem executados de modo sequencial
+    e por isso o nome deles possui uma data e uma numeração antes do nome de fato do migration.
+
+    Portanto, sabendo que estamos usando agora chaves estrangeiras, da forma como geramos nosso código estamos
+    criando um relacionamento com a tabela Categoria antes mesmo de criar a tabela. Então vamos resolver isso
+    simplesmente alterando a ordem dos migrations mudando o nome.
