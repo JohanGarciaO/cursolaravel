@@ -19,7 +19,7 @@ class Produtos extends Migration
             $table->text('descricao'); // campo descricao do tipo text
             $table->double('preco', 10, 2); // campo preco do tipo double com 2 casas decimais
             $table->string('slug'); // campo slub do tipo string
-            $table->string('imagem'); // campo imagem para armazenar o path de uma imagem
+            $table->string('imagem')->nullable(); // campo imagem para armazenar o path de uma imagem (pode ser nulo)
 
             $table->unsignedBigInteger('id_user'); // campo que vai armazenar o valor da FK usuário
             $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade'); // Cria o relacionamento da FK dizendo onde tá referenciando e qual tipo de relacionamento, neste caso 'cascade'

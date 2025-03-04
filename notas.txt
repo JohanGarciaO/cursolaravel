@@ -326,7 +326,7 @@ CRIANDO TABELAS USERS, CATEGORIAS E PRODUTOS
             $table->text('descricao'); // campo descricao do tipo text
             $table->double('preco', 10, 2); // campo preco do tipo double com 2 casas decimais
             $table->string('slug'); // campo slub do tipo string
-            $table->string('imagem'); // campo imagem para armazenar o path de uma imagem
+            $table->string('imagem')->nullable(); // campo imagem para armazenar o path de uma imagem (pode ser nulo)
             $table->unsignedBigInteger('id_user'); // campo que vai armazenar o valor da FK
             $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade'); // Cria o relacionamento da FK dizendo onde tá referenciando e qual tipo de relacionamento, neste caso 'cascade'
             $table->timestamps(); // cria dois campos: created_at e updated_at
@@ -360,3 +360,127 @@ CRIANDO TABELAS USERS, CATEGORIAS E PRODUTOS
     Portanto, sabendo que estamos usando agora chaves estrangeiras, da forma como geramos nosso código estamos
     criando um relacionamento com a tabela Categoria antes mesmo de criar a tabela. Então vamos resolver isso
     simplesmente alterando a ordem dos migrations mudando o nome.
+
+******************************************************************************
+SEEDER
+
+Recurso que utilizamos para ganhar tempo na inserção de registros no banco de dados
+
+Vamos criar um seeder para adicionar um usuário em nossa tabela
+
+1. php artisan make:seeder UsersSeeder
+    isso gerará o arquivo de seeder, que é bem simples e tem apenas um método (o run(), que é a ação de quando executado)
+2. Precisamos fazer esta seeder conversar com o Model User, repare que:
+    - Possui um array de atributos chamado fillable (define quais campos serão permitidos inserção em massa)
+    Precisamos modificar pra deixar de acordo com as colunas que queremos modificar
+3. Vamos IMPORTAR o Model no Seeder:
+    use App\Models\User;
+
+    assim poderemos usar o método User::create() para criar nossos usuários
+4. Agora vamos implementar a criação de um usuário:
+
+    public function run()
+    {
+        User::create([
+            'firstName' => 'Johan',
+            'lastName' => 'Garcia',
+            'email' => 'contato@johan.com',
+            'password' => bcrypt('12345678'),
+        ]);
+    }
+
+5. Agora no DatabaseSeeder iremos utilizar o $this para passar um array com classes de Seeders que serão executadas
+    
+    public function run()
+    {
+        // \App\Models\User::factory(10)->create();
+        $this->call([
+            UsersSeeder::class,
+        ]);
+    }
+
+******************************************************************************
+FACTORY
+-> Para que não precisemos inserir registro por registro e inserir alguns registros específicos em massa para testar
+
+1. Vamos usar o Factory para gerar 5 categorias de forma automática
+
+    - Primeiro vamos criar o Factory com: php artisan make:factory CategoriaFactory
+
+2. Agora dentro da estrutura definition() vamos gerar uma estrutura modelo para ser executada p/ gerar o cadastro
+
+    - A tabela cadastro possui o campo nome e descricao, então vamos colocá-los no Factory e usar o $this->fake p/ gerar registros falsos
+
+    public function definition()
+    {  return [
+            'nome' => $this->faker->unique()->word, // gera uma palavra fake única      
+            'descricao' => $this->faker->text,
+        ];
+    }
+
+3. Agora precisamos criar um Seeder para executar este Factory:
+    - php artisan make:seeder CategoriasSeeder
+
+    BOAS PRÁTICAS:
+        - Factory -> singular
+        - Seeder -> plural
+
+    Vamos importar o Model no Seeder com: user App\modules\Categoria;
+
+    E em seguida, geramos os 5 registros com o factory encadeando no create:
+
+    public function run()
+    {
+        Categoria::factory(5)->create();
+    }
+
+4. Agora precisamos definir a nossa CategoriaFactory na call do DatabaseSeeder
+    Detalhe, se formos executar apenas esta Seeder, não precisa do array na call e pode passar direto na call()
+    Ficando: $this->call(CategoriasSeeder::class);
+
+5. Agora basta executar a seed do projeto:
+    php artisan db:seed
+
+******************************************************************************
+MFSCR
+
+Podemos criar todos esse recursos com um só comando, com:
+
+    php artisan make:model Teste --migration --factory --seed --controller --
+    
+Ou,
+
+    php artisan make:model Teste -mfscr
+
+******************************************************************************
+FACTORY PRODUTOS e STRSLUG
+
+O Laravel dispõem para a gente uma série de classes para serem utilizadas e uma delas é o Str (que serve para gerar uma Url amigável)
+
+Até então só vimos o método create do Eloquent, mas tem outros, como é o caso do pluck
+Pluck: extrai uma informação de uma tabela (no nosso caso queremos o id das tabelas Users e Categorias para fazer o relacionamento)
+
+O definition() de nossa factory ficou da seguinte maneira:
+
+    public function definition()
+    {   
+        $name = $this->faker->unique()->sentence(); // Define o valor de nome antes para colocar em uma variável
+        return [
+            'nome' => $name, // define nome
+            'descricao' => $this->faker->paragraph(), // define a descricao como um parágrafo fake
+            'preco' => $this->faker->randomNumber(2), // gera um número aleatório para colocar em preco
+            'slug' => Str::slug($name), // gera uma url com a classe Str
+            'imagem' => $this->faker>imageUrl(400, 400), // gera a url de uma imagem de dimensão 400x400
+            'id_user' => User::pluck('id')->random(), // Extrai randomicamente um dos Ids da tabela users
+            'id_categoria' => Categoria::pluck('id')->random(), // Extrai randomicamente um dos Ids da tabela categorias
+        ];
+    }
+
+Agora iremos definir a nossa Seed:
+
+    public function run()
+    {
+        Produto::factory(20)->create();
+    }
+
+Por últimos chamamos a seed no DatabaseSeeder
