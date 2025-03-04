@@ -484,3 +484,68 @@ Agora iremos definir a nossa Seed:
     }
 
 Por últimos chamamos a seed no DatabaseSeeder
+
+******************************************************************************
+RELACIONAMENTOS
+
+1. Vamos começar criando dois migrations
+    - php artisan make:migration contatos --create=contatos
+    - php artisan make:migration regras --create=regras
+
+    Antes nós tinhamos um relacionamento de 1 para muitos entre produtos e usuários (1 user pode ter muitos prosdutos)
+    
+2. Agora vamos criar um relacionamento de 1:1 entre usuário e contato para que cada usuário tenha apenas 1 :
+
+    public function up()
+    {
+        Schema::create('contatos', function (Blueprint $table) {
+            $table->id();
+            $table->string('cpf');
+            $table->string('cep');
+            $table->string('numero');
+            $table->string('whatsapp');
+            
+            $table->unsignedBigInteger('id_user');
+            $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
+
+            $table->timestamps();
+        });
+    }
+
+3. Vamos criar um relacionamento de n:n entre a tabela regras e usuários:
+
+    public function up()
+    {
+        Schema::create('regras', function (Blueprint $table) {
+            $table->id();
+            $table->string('nome');
+            $table->timestamps();
+        });
+
+        Schema::create('regra_user', function (Blueprint $table) {
+            $table->id();
+
+            $table->unsignedBigInteger('id_user');
+            $table->foreign('id_user')->references('id')->on('users');
+
+            $table->unsignedBigInteger('id_regra');
+            $table->foreign('id_regra')->references('id')->on('regras');
+
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('regras');
+        Schema::dropIfExists('regra_user');
+    }
+
+    Repare que para criar um relacionamento de n:n devemos criar outra tabela entre as tabelas relacionadas.
+
+4. Agora basta dar um: php artisan migrate
