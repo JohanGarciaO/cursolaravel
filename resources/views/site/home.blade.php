@@ -4,8 +4,10 @@
 
 @section('conteudo')
 
-    @guest
-        Nenhum
-    @endguest
+    @forelse ($frutas as $fruit)
+        {{$fruit}}
+        @empty
+            O array está vazio
+    @endforelse
 
 @endsection

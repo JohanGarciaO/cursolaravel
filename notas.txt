@@ -753,3 +753,39 @@ Mas temos o inverso do @auth para retornar o valor caso não haja nenhum usuári
     @endguest
 
     Imprime se não tiver nenhum usuário autenticado
+
+******************************************************************************
+ESTRUTURAS DE REPETIÇÃO
+
+Temos o FOR:
+
+    @for ($i = 0; $i < 10; $i++)
+        Valor atual é {{$i}} <br>
+    @endfor
+
+Também temos o While (mas aí precisamos criar blocos php para definir e incrementar a variável, pode ser usando a própria diretiva pra criar os blocos):
+
+    @php
+        $i = 0;
+    @endphp
+
+    @while ($i <= 10)
+        valor atual com o while é {{$i}} <br>
+        @php $i++; @endphp
+    @endwhile
+
+Podemos usar o ForEach:
+
+    Antes vou passar um array $frutas = ['banana', 'laranja', 'maça']; na nossa rota para dentro da View
+
+    @foreach ($frutas as $fruit)
+        {{$fruit}}
+    @endforeach
+
+Caso queiramos usar o foreach de um modo que tenha um valor padrão para caso o array esteja vazio, podemos usar a diretiva @forelse e no final a @empty sem precisar fechá-la:
+
+    @forelse ($frutas as $fruit)
+        {{$fruit}}
+        @empty
+            O array está vazio
+    @endforelse
