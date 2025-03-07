@@ -549,3 +549,207 @@ RELACIONAMENTOS
     Repare que para criar um relacionamento de n:n devemos criar outra tabela entre as tabelas relacionadas.
 
 4. Agora basta dar um: php artisan migrate
+
+******************************************************************************
+VIEWS
+
+Aa Views é a camada do MVC responsável pela vizualização
+
+Ficam dentro da pasta Resource e sua extensão é .blade.php
+
+Blade: sistema de templates do Laravel
+
+É responsabilidade da View renderizar o HTML
+
+QUAL É O FLUXO???
+
+1. Temos uma rota (controller) do tipo Resource em Produtos
+
+    - Então quando acessamos produtos, o Controller ProdutoController responde por essas rotas
+    - Route::resource('produtos', ProdutoController::class);
+
+2. Agora vamos mudar esta rota para que ao invés de mostrar os produtos ele retorne uma view, fazemos isso com:
+
+    return view('news');
+
+    Isso mesmo, não precisa botar a extenção, o Laravel já interpreta tudo
+    
+    Desse modo vamos conseguir renderizar um HTML em nossa aplicação.
+
+    Obs.: Caso dentro da pasta View a gente tivesse uma outra pasta chamada Site bastava passa o caminho com / ou . que seria renderizado.
+    return view('site.empresa'); ou return view('site/empresa');
+
+3. E como fazemos para passar um dado para a View?
+
+    Basta passar em um array na rota:
+
+    public function index()
+    {
+        $nome = 'Johan';
+        $idade = 22;
+
+        return view('site.empresa', ['nome' => $nome, 'idade' => $idade]);
+    }
+
+4. E para usar esse valor na View???
+
+    Só usar {{}} chaves duplas.
+
+    Ex: <span>Meu nome é {{ $nome }} e minha idade é {{$idade}}.</span>
+
+5. E se nossa variável tivesse conteúdo HTML, como exibiríamos na View?
+
+    Já adianto que com chaves duplas iria mostrar na tela o html literal
+
+    Para renderizar o HTML ao invés de chaves duplas vamos usar chaves e dupla exclamação:
+
+    Passando na rota:           $html = "<h1> Olá, eu sou H1</h1>";
+    Renderizando na view:       {!!$html!!}
+
+6. Também tem outra forma de passar as informações para as views sem precisar ser através de Array, para isso usamos o compact():
+
+    return view('site.empresa', compact('nome', 'idade', 'html'));
+
+    basta passar o nome da variável que a função já crias as variáveis na view manualmente
+
+    Atenção, não pode passar atributo no compact de variável que já não exista previamente
+
+******************************************************************************
+Section, Yield e extends
+
+Vamos agora trabalhar com nosso sistema de templates
+
+1. Vamos deletar alguns arquivos: welcome.blade, news.blade
+2. Renomear o empresa.blade para layout.blade.php
+3. Criar em site mais um arquivo chamado home.blade.php
+
+Dentro do layout vamos gerar uma estrutura padrão de HTML e no body vamos usar a nossa primeira diretiva (@yield) para incorporar o nosso conteúdo
+
+    <body>
+        @yield('conteudo')
+    </body>
+
+Agora para herdar a estrutura de um .blade podemos usar a diretiva @extends, então no home.blade podemos herdar o layout
+    
+    Logo, dentro do arquivo colocamos apenas: @extends('site.layout') e já vai herdar a estrutura
+
+    Mas ainda no home delimitamos através da @section() e @endsection onde será encontrado o nosso conteúdo
+
+    Ou seja, se no layout foi definido um @yield('conteudo'), lá no home dentro do @session('conteudo') passamos o mesmo nome usado no @yield. E aí todo conteúdo delimitado no @session irá ficar onde foi colocado o @yield no layout.
+
+Desse modo, a home.blade ficou:
+
+    @extends('site.layout')
+
+    @section('conteudo')
+    <h1>Essa é nossa Home.</h1>
+    @endsection
+
+    Isso herda a estrutura html que foi colocada no layout e coloca o que está delimitado na @section dentro de onde foi apontado no @yield do layout
+
+Podemos por exemplo criar uma sessão para o title e um yield no layout e aí o título ficará dinâmico, isso pode ser feito com o @sectione @endsection
+normalmente ou em apenas uma linha passando dois parâmetros para o section:     
+
+    @section('title','home')
+
+    E no lugar do título do layout um @yield('title'), óbvio
+
+****************************************************************************** CHEGANDO AQUI TEMOS UMA VISÃO GERAL DA MECÂNICA DO LARAVEL
+Laravel Snippers
+
+Vamos instalar algumas extensões:
+
+    1. Laravel Blade Snippets (deixa os templates mais amigáveis e nos ajuda com alguns triggers: autocompletes)
+        - Vai ter uma colocaração diferentes as diretivas
+
+    2. Laravel Snippets (Para as Rotas)
+        - Só em digitar um Route-ControllerAction já vai autocomlpetar pra gente com:   Route::get('users/{id}', [UserController::class, 'index'])->name('user.index');
+        Já cria a rota, só substituir o valores
+
+******************************************************************************
+Comentários e Operador Ternário
+
+Comentários: no blade usamos {{--comentário--}} duplo traço dentro de dupla chaves
+    - Estes comentários não são renderizados em nosso código fonte
+
+Operador Ternário: 
+
+    Como exemplo vamos verificar a existência de uma variável e exibir um conteúdo:
+
+        {{ isset($nome) ? $nome : 'Sem nome'}}
+
+    Também podemos definir um valor padrão para uma variável, será mostrado caso a variável não exista. Fazemos isso com: 
+
+        {{$teste ?? 'Padrão'}}
+
+******************************************************************************
+CUSTOMIZANDO VIEWS DE ERRO
+
+Criamos dentro da Pasta Views, umas pasta chamada errors, e dentro dela um arquivo com o código do erro. Ex: 404.blade.php
+
+Temos o erro 500 que é de servidor, então se gerarmos propositalmente um erro de sintaxe em uma rota, criar o arquivo com o código do erro e na nossa .env colocar um false p/ APP_DEBUG=false conseguiremos renderizar essa view de erro
+
+******************************************************************************
+ESTRUTURAS DE CONTROLE
+
+Basta usar a diretiva @if. Exemplo:
+
+    @if($nome == 'Johan')
+        true
+    @else
+        false
+    @endif
+
+    imprime true se for verdadeira
+
+E temos o contrário do If, que é o unless (é tipo a condição negada):
+
+    @unless($nome == 'Johan')
+        true
+    @else
+        false
+    @endunless
+
+    imprime true se for falsa
+
+Também temos o bom e velho Switch:
+
+    @switch($idade)
+        @case(22)
+            Idade está ok
+            @break
+        @case(21)
+            Idade está errada
+            @break
+        @default            
+    @endswitch
+
+Obs.: lembrando que com os snippets só em escrever switch ele já autocompleta, assim como para as outras estruturas
+
+Temos o isset (para verificar se existe):
+
+    @isset($nome)
+        Existe
+    @endisset
+
+Temos o empty (para verificar se está vazia):
+
+    @empty($nome)
+        Vazia
+    @endempty
+
+Temos uma diretiva para verificar se existe um usuário autenticado @auth:
+
+    @auth
+        Está autenticado
+    @endauth
+
+    Imprime se tiver um usuário autenticado
+
+Mas temos o inverso do @auth para retornar o valor caso não haja nenhum usuário autenticado:
+
+    @guest
+        Ninguém está autenticado
+    @endguest
+
+    Imprime se não tiver nenhum usuário autenticado
