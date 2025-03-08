@@ -789,3 +789,68 @@ Caso queiramos usar o foreach de um modo que tenha um valor padrão para caso o 
         @empty
             O array está vazio
     @endforelse
+
+******************************************************************************
+INCLUDE
+
+1. Vamos criar uma pasta em views chamada includes, e dentro dela um arquivo chamado mensagem.blade.php com o conteúdo:
+
+    <h1>Esta é uma mensagem</h1>
+    <p>Texto qualquer</p>
+
+2. Como incluir isso em nossa view home?
+
+    Basta usar o @include('includes.mensagem',['título' => 'Mensagem de sucesso!'])
+
+    Primeiro parâmetro é o local da view a incluir e o seguindo é um array com valores para serem exibidos dinamicamente
+
+    No arquivo incluido pra usar essa variável é só usar o {{}}
+
+COMPONENT
+
+1. Criaremos uma pasta chamada components em views, dentro um sidebar.blade.php, dentro dele:
+
+    <div style="background-color: black; color: #fff">
+        <h1>Sidebar</h1>
+        <p></p>
+    </div>
+
+2. Para usar esse Component no home basta usar a diretiva @component:
+
+    @component('components.sidebar')
+        
+    @endcomponent
+
+3. Para cria um conteúdo dinâmico p/ esse component usamos a diretiva @slot passando um nome:
+
+    @component('components.sidebar')
+        @slot('paragrafo')
+            Texto qualquer vindo do slot
+        @endslot
+    @endcomponent
+
+4. E para utilizar esse conteúdo dinâmico no Component basta usar a tag de impressão e o nome do slot {{$paragrafo}}
+
+******************************************************************************
+STRACKS e PUSH
+
+Os Stracks são usados para controlar em quais views serão renderizados determinados scripts, estílos ou arquivos externos
+
+Ex: se eu fosse importar alguns scripts ou instalar algum framework css como o bootstrap ou materialize, ao instalar via CDN (colocando o link no html) do layout
+    este script/framework irá afetar todas as views que herdam este layout.
+
+Então para controlar isso e definir quem de fato fará uso daquelas importações, usamos o stack. Ex:
+
+    @stack('style')
+
+
+    Coloma isso nolayout.blade
+
+Aí na view que queremos utilizar, usamos o @push para carregar determinada importação para o @Strack do template:
+
+    @push('style')
+        <!-- Compiled and minified CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    @endpush
+
+    Isso vai carregar o @strack 'style' com o css do materialize, e como tem um strack chamado style no template layout.blade. Na renderização o que tiver sido carregado no @push aparecerar em seu devido @Strack
