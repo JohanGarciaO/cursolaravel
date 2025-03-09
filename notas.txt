@@ -137,7 +137,7 @@ Request: é um recurso para obter uma instância via injeção de dependência d
 // Passar parâmetros para responder um método de vizualização de produto
 Route::get('/produto/{id?}', [ProdutoController::class, 'show'])->name('produto.show');
 
-Obs: lembre se criar o método no controller, se quiser deixar opcional colocar o interrogação pós parâmetro, e definifir o valor nos parâmetros de ciração do método no controller
+Obs: lembre se criar o método no controller, se quiser deixar opcional colocar o interrogação pós parâmetro, e definifir o valor nos parâmetros de criação do método no controller
 public function show($id = 0)
     {
         return "Show: " . $id;
@@ -990,3 +990,76 @@ Como queríamos todos os registros de nosso banco de dados usamos o ::all mas ag
 
         o center foi usado para centralizar nossa navegação
 
+******************************************************************************
+CRIANDO O SITE CONTROLLER
+
+Até aqui estamos usando o nosso controller resource para o nosso site, isso não é errado, mas vamos criar um controller só para o site e deixar os resource para a parte de gerência (CRUDS)
+Então vamos criar o siteController: php artisan make:controller siteController
+
+Depois atualizamos o arquivo web de rotas para definir uma rota get para esse novo controle na rota '/' e colamos o conteúdo no index() do ProdutoController neste SiteController
+
+******************************************************************************
+LISTAGEM DE UM ÚNICO PRODUTOS
+
+Agora no arquivo de rotas vamos criar uma rota para uma página que mostrará os detalhes de apenas um produto:
+
+    Route::get('/produto/{slug}', [SiteController::class, 'details'])->name('site.details');
+
+    A nossa rota é no /produto passando um parâmetro chamado slug para o nosso SiteController no método details que criaremos agora:
+
+    public function details($slug){
+        $produto = Produto::where('slug',$slug)->first();
+        return view ('site.details', compact('produto'));
+    }
+
+    No SiteController vai receber um slug via parâmetro para a função details, vai buscar no banco de dados o registro onde o slug vai ser igual a slug.
+    O ->first() garante que o resultado vai ser apenas um registro
+
+    ATENÇÃO, É NECESSÁRIO USAR O FIRST, DO CONTRÁRIO NÃO SERÁ POSSÍVEL OBTER O OBJETO DO REGISTRO
+
+Na home precisamos colocar um href no botão do card para entrar na rota details faremos isso especificando o nome da rota:
+
+    <a href="{{ route('site.details', $product->slug) }}" class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons">visibility</i></a>
+
+Também precisaremos criar uma view para os detalhes do produto
+
+    @extends('site.layout')
+    @section('title','Detalhes')
+
+    @section('conteudo')
+
+        <div class="row container">
+            <div class="col s12 m6">
+                <img src="{{$produto->imagem}}" class="responsive-img">
+            </div>
+
+            <div class="col s12 m6">
+                <h1>{{$produto->nome}}</h1>
+                <p>{{$produto->descricao}}</p>
+                <button class="btn orange btn-large">Comprar</button>
+            </div>
+        </div>
+
+    @endsection
+
+******************************************************************************
+OneToMany Inverse / BelongsTo
+
+Vamos lembrar os relacionamentos. Na tabela produtos temos o campo id_user e id_categoria simbolizando que um produto pertence a um usuário e uma categoria
+Então este é um relacionamento de 1:n Inverso porque neste caso vamos listar a qual categoria e qual usuário aquele produto pertence
+
+Para defirnirmos os relacionamentos é muito simples, vamos por exemplo definir o relacionamento entre produto e usuário
+
+1. Vamos abrir o model Produto e criar um método chamado user que retornará o usuário a qual ele pertence:
+
+    public function user(){
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+2. Agora em nossa view de detalhes vamos colocar um novo parágrafo p/ mostrar o usuário a qual o objeto pertence:
+
+    <p>Postado por: {{$produto->user->firstName}}</p>
+
+    acessamos o valor de user que é o usuário a qual o objeto pertence e depois encadeamos no nome do atributo/coluna que queremos exibir, neste caso o primeiro nome
+
+    Da mesma forma podemos fazer com Categoria

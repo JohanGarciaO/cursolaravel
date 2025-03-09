@@ -9,7 +9,7 @@
             <div class="card">
                 <div class="card-image">
                     <img src="{{$product->imagem}}">
-                    <a class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons">visibility</i></a>
+                    <a href="{{ route('site.details', $product->slug) }}" class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons">visibility</i></a>
                 </div>
                 <div class="card-content">
                     <span class="card-title">{{ Str::limit($product->nome, 20, '...') }}</span>
