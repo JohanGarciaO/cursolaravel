@@ -492,9 +492,9 @@ RELACIONAMENTOS
     - php artisan make:migration contatos --create=contatos
     - php artisan make:migration regras --create=regras
 
-    Antes nós tinhamos um relacionamento de 1 para muitos entre produtos e usuários (1 user pode ter muitos prosdutos)
+    Antes nós tinhamos um relacionamento de 1 para muitos entre produtos e usuários (1 user pode ter muitos produtos)
     
-2. Agora vamos criar um relacionamento de 1:1 entre usuário e contato para que cada usuário tenha apenas 1 :
+2. Agora vamos criar um relacionamento de 1:1 entre usuário e contato para que cada usuário tenha apenas 1:
 
     public function up()
     {
@@ -844,7 +844,7 @@ Então para controlar isso e definir quem de fato fará uso daquelas importaçõ
     @stack('style')
 
 
-    Coloma isso nolayout.blade
+    Coloca isso no layout.blade
 
 Aí na view que queremos utilizar, usamos o @push para carregar determinada importação para o @Strack do template:
 
@@ -854,3 +854,139 @@ Aí na view que queremos utilizar, usamos o @push para carregar determinada impo
     @endpush
 
     Isso vai carregar o @strack 'style' com o css do materialize, e como tem um strack chamado style no template layout.blade. Na renderização o que tiver sido carregado no @push aparecerar em seu devido @Strack
+
+******************************************************************************
+VIEWCACHE e VIEWCLEAR
+
+1. Coloca o APP DEBUG true novamente no .env
+2. Vamos deletar a pasta Components e a pasta Includes
+3. Vamos limpar nossa home.blade apagando os push, component e include. E apagar os Stack de nosso layout
+4. Agora abrindo terminal veremos que temos dois comandos para trabalhar com as views, o view cache e o view clear
+
+O Laravel compila nossas views por demanda, então ele escolhe o melhor momento para compilar as views. Depois ele se encarrega de verificar se alguma view foi modificada para recompilá-la
+
+    - php artisan view:cache 
+        Força o Laravel a pré-compilar as views para ter um melhor desempenho (mas não é muito recomendado)
+
+    - php artisan view:clear
+        Às vezes fazemos algumas alterações nas views e parece que nada surtiu efeito na página, pode ser porque o sistema esteja pegando as views do cache, então podemos usar o clear para limpar o cache de nossas views
+
+******************************************************************************
+IMPLEMENTANDO O MATERIALIZE
+
+Vamos implementar um Framework CSS via CDN.
+
+1. Basta colar os links direto no layout, ou usar os stacks e push, como já foi feito anteriormente.
+
+2. Agora vamos criar um navbar (no próprio site do Materialize temos os modelos de componentes já prontos). Vamos mudar só algumas coisas, ficando:
+
+    <nav class="red">
+        <div class="nav-wrapper container">
+            <a href="#" class="brand-logo center">CursoLaravel</a>
+            <ul id="nav-mobile" class="left">
+                <li><a href="">Home</a></li>
+                <li><a href="">Carrinho</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    Acrescentamos uma cor ao navbar com a classe red
+    add class container na div p/ centralizar tudo
+    center na logo
+    left na lista e retiramos o 'hide-on-med-and-down' p/ não ocultar a lista em dispositivos menores
+
+3. Agora vamos ao conteúdo no nosso home.blade:
+
+    <div class="row container">
+        <div class="col s12 m3">            
+        </div>
+        <div class="col s12 m3">            
+        </div>
+        <div class="col s12 m3">            
+        </div>
+        <div class="col s12 m3">            
+        </div>
+    </div>
+
+    Vamos criar uma row e dentro quatro colunas que em dispositovos pequenos ocupam o tamanho máximo 12 e em médios ocupa o tamanho de 3, ficando as 4 em uma linha. Essas classes já são tudo do materialize
+
+    O 'container' na row faz com que tudo fique centralizado
+
+4. Como estamos trabalhando com listagem de produtos, vamos usar outro componente do materialize chamado Cards
+
+    Então, dentro dos col colocamos o restante do conteúdo dos cards
+
+    Repare que só em fazer isso não vai funcionar completamente, se o card tiver imagem não vai aparecer porque de fato não baixamos a imagem para nossa raiz, agora os ícones vão dar errado pq não instalamos o pacote 
+    de ícones do materialize
+
+    Então para isso, vamos no site do materialize->componentes->icons e lá vai ter um link para importarmos via CDN
+
+    Mas não somos obrigados a utilizar o ícone que já veio no card, lá no site do materialize tem uma opção chamada "search Google icons" e lá terá muitos ícones para a gente escolher
+    Então vamos personalizar, vou pesquisar por view nos ícones do google e escolher um, tem um bom chamado visibility, então basta colar esse nome dentro de um span com a classe material-icons
+
+******************************************************************************
+AGORA VAMOS DE FATO FAZER A LISTAGEM DOS PRODUTOS
+
+    1. Primeiro vamos recaptular: temos uma rota resource chamada Produtos, nela, uma de suas rotas é a index, vamos apagar o conteúdo e deixar somente a listagem dos produtos para dentro de uma variável com o 
+        método ::all do nosso ORM (o Eloquent)
+
+        $produtos = Produto::all();
+        
+        Onde Produto é nossa Model
+
+    2. Para passar o objeto produtos para a nossa view é muito simples, basta usar o Compact:
+
+        return view('site.home', compact('produtos'));
+
+Antes de listarmos os produtos lembre de ter executado suas seeders com php artisan db:seed para garantir que que os dados estejam registrados no bando de dados
+
+    3. Vamos criar um loop com a diretriz foreach no home.blade e lá colocamos o card consumindo o produto
+
+        @foreach ($produtos as $product)
+            <div class="col s12 m3">    
+                <div class="card">
+                    <div class="card-image">
+                        <img src="{{$product->imagem}}">
+                        <a class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons">visibility</i></a>
+                    </div>
+                    <div class="card-content">
+                        <span class="card-title">{{$product->nome}}</span>
+                        <p>{{$product->descricao}}</p>
+                    </div>
+                </div>    
+            </div>
+        @endforeach
+
+        Mudamos para m4 as cols para melhorar o front que tava muito zuado pelo fato de cada card está com uma quantidade de texto diferentes
+
+        MAS, isso não é problema podemos limitar a quantidade de caracteres com a classe Str (nossa classe de manipulação de Strings). Ficando:
+
+            {{ Str::limit($product->descricao, 20, '...') }}
+
+            Isso vai limitar o conteúdo a 100 caracteres e colocar '...' reticcências quando chegar em 100 caracteres
+
+******************************************************************************
+PAGINAÇÃO DE RESULTADOS
+
+Como queríamos todos os registros de nosso banco de dados usamos o ::all mas agora que queremos uma paginação vamos usar o ::paginate(3) informando quantos itens queremos por página
+
+1. Então usamos o método paginate no nosso ProdutoController
+2. Vamos criar a navegação entre as páginas em nossa view home
+
+    <div class="row">
+        {{ $produtos->links() }}
+    </div>
+
+    criamos outra row para organizar e usamos o método links(), ele já retorna pra gente um componente de navegação. Mas ele não vai vir muito bonito porque seu estilo veio compatível com TailWind ao invés de Materialize.
+
+    Então se tivéssemos usando o TailWind beleza, mas sem estarmos vamos precisar criar uma view específica só para a navegação. Vamos copiar uma pronta p/ ganhar tempo
+
+    - Primeiro criamos uma pasta chamada custom na pasta view, dentro cria o arquivo pagination.blade.php e cola o código pronto
+    - Agora no métodos links passamos o caminho de nossa view customizada:
+
+        <div class="row center">
+            {{ $produtos->links('custom.pagination') }}
+        </div>
+
+        o center foi usado para centralizar nossa navegação
+
