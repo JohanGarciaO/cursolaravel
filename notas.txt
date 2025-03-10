@@ -1063,3 +1063,68 @@ Para defirnirmos os relacionamentos é muito simples, vamos por exemplo definir 
     acessamos o valor de user que é o usuário a qual o objeto pertence e depois encadeamos no nome do atributo/coluna que queremos exibir, neste caso o primeiro nome
 
     Da mesma forma podemos fazer com Categoria
+
+******************************************************************************
+CATEGORIAS DINÂMICAS COM VIEWSHARE
+
+Vamos criar um menu Dropdown no nosso navbar de modo que liste nossas categorias e ao clicar em uma delas, liste todos os produtos daquela categoria.
+
+1. Criar o Dropdown, pegaremos um pronto no Materialize, a estrutura tem pronta lá, mas devemos ainda criar um JavaScript para ativar o Dropdown passando algumas opções de modificação
+
+    const elemDrop = document.querySelectorAll('.dropdown-trigger');
+    const instanceDrop = M.Dropdown.init(elemDrop, {
+        coverTrigger: false,
+        constrainWidth: false
+    });
+
+2. Vamos colocar uma setinha em nosso botão de dropdown, usamos a tag "i":
+
+    <li><a class='dropdown-trigger' href='' data-target='dropdown1'>Categorias <i class="material-icons right">arrow_downward</i></a></li>
+
+    Repare que na classe foi adicionado o "right" pra a seta se encaixar na direita, se fosse pra colocar na esquerda era "left"
+
+3. Repare que não faz sentido a gente usar um método para buscar as categorias toda vez que quiser essa informação, porque essa é uma informação que vai se repetir, então a forma mais inteligente de fazer isso É
+    ir no nosso AppServiceProvider.php (que é nosso provedor de serviços), e no método boot de inicialização a gente fazer uma única consulta por categorias, para isso:
+
+    - Importa a Model Categoria
+    - Usa o método ::all p/ fazer um select geral e colocar em um obj
+    - Agora utilizamos o nosso método view() encadeando no share() passando o dado que vamos compartilhar para todas as nossas views. Ficando:
+
+        public function boot()
+        {
+            $categoriaMenu = Categoria::all();
+            view()->share('categoriaMenu',$categoriaMenu);
+        }
+
+    - Agora podemos acessar essa chave em todas as nossas views (ou seja, temos a informação de quais categorias possui no banco com apenas uma consulta).
+
+4. Agora no layout.blade vamos usar um foreach para listar todas as nossas categorias dentro do DropDown:
+
+    <ul id='dropdown1' class='dropdown-content'>
+        @foreach ($categoriaMenu as $categoria)
+            <li><a href="#!">{{$categoria->nome}}</a></li>            
+        @endforeach
+    </ul>
+
+******************************************************************************
+LISTAR PRODUTOS DE UMA CATEGORIA
+
+1. O primeiro passo é criarmos uma nova rota para isso
+2. A rota vai levar pra um método, então vamos criar um método para listar produtos de uma categoria em nosso SiteController
+3. Lá no método, buscamos os produtos que fazem parte daquela categoria e depois retornamos uma view passando esse valor
+
+    ATENÇÃO: ao usar o método ::all ele nos trás todos os registros mas se colocarmos alguma condição, precisaremos encadear no método get para conseguir pegar os resultados. Ficando:
+
+    public function categoria($id){
+        $produtos_categoria = Produto::where('id_categoria',$id)->get();
+        return view ('site.categoria', compact('produtos_categoria'));
+    }
+
+4. Logo, precisamos criar uma view para renderizar o conteúdo desta listagem. E agora é só listar como preferir, para ganhar tempo vamos usar a mesma estrutura da home e adicionar só um title "Categoria:" e embaixo irá mostrar os cards. Vamos apagar só os links de paginação
+5. Agora definiremos as rotas no dropdown do layout.blade, no href usamos o método route passando o nome da rota e o obj da categoria:
+
+    <li><a href="{{ route('site.categoria',$categoriaM->id) }}">{{$categoriaM->nome}}</a></li>  
+
+    mesmo que eu tivesse passado o objeto todo ao iinvés de só o id o método ainda ia conseguir identificar
+
+6. Para paginarmos ao invés de usar o método get, devemos usar o paginate(x), pois são formas diferentes de tratar o objeto do Eloquent
