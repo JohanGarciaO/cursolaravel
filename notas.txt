@@ -1128,3 +1128,252 @@ LISTAR PRODUTOS DE UMA CATEGORIA
     mesmo que eu tivesse passado o objeto todo ao iinvés de só o id o método ainda ia conseguir identificar
 
 6. Para paginarmos ao invés de usar o método get, devemos usar o paginate(x), pois são formas diferentes de tratar o objeto do Eloquent
+
+******************************************************************************
+MOSTRAR NOME DA CATEGORIA E PREÇO NUMBERFORMAT
+
+1. Importamos o nosso Model categoria no SiteController.php
+2. Usamos o método find() passando o $id e o Laravel busca a categoria de modo automático, depois jogamops a variável no compact
+3. Agora basta usar no arquivo categoria.blade
+
+Vamos exibir o preço na página de detalhes, mas repare que só exibir vai deixar o número não formatado então fazemos:
+
+    R$ {{number_format($produto->preco, 2, ',', '.')}}
+
+    O primeiro parâmetro do number_format é o número, o segundo são quantas casas decimais, o terceiro é o separador de casas decimais e o quarto é o separador de milhar
+
+OBS: Para fazer funcionar o link do botão home no navbar, devemos especificar para qual rota ir no arquivo layout.blade, fazemos isso com:
+
+    <li><a href="{{ route('site.index') }}">Home</a></li>
+
+******************************************************************************
+CARRINHO DE COMPRAS COM darryldecode/cart
+
+Agora implementaremos um carrinho de compras em nossa aplicação utilizando a biblioteca darryldecode/cart
+
+Mas antes de instalarmos essa biblioteca iremos executar o comando: composer self-update
+Isso irá atualizar o próprio composer caso seja necessário
+
+Agora deve ser instalada a lib e adicionada no array provides da config/app/php a linha: 
+    Darryldecode\Cart\CartServiceProvider::class
+
+E no array aliases a linha:
+
+    'Cart' => Darryldecode\Cart\Facades\CartFacade::class
+
+Agora vamos criar um controller para nosso carrinho: php artisan make:controller CarrinhoController
+
+Agora vamos criar um método para lista todos os produtos de nosso carrinho
+
+    public function carrinhoLista() {
+        
+    }
+
+Só que para essa action ser executada precisamos implementar a rota que levará até ela
+
+    - Primeiro importa o controller com: 
+    
+        use App\Http\Controllers\CarrinhoController;
+
+    - E depois cria a rota com: 
+    
+        Route::get('/carrinho', [CarrinhoController::class, 'carrinhoLista'])->name('site.carrinho');
+
+Podemos usar o getContent para obter o conteúdo do carrinho e o dd (Die and Dump) para debugar na tela:
+
+    public function carrinhoLista() {
+        $itens = \Cart::getContent();
+        dd($itens);
+    }
+
+******************************************************************************
+ADICIONANDO ITENS AO CARRINHO
+
+1. Criaremos mais uma rota para adicionar itens ao carrinho:
+
+    Route::post('/carrinho', [CarrinhoController::class, 'adicionaCarrinho'])->name('site.addCarrinho');
+
+    Repare que o nome da rota pode ser o mesmo da outra porque o verbo é diferente, então temos uma rota get e uma post ao mesmo tempo com o mesmo nome
+
+2. Criaremos a função que adiciona um item ao carringo, usamos o \Cart::add e passamos um array, porém, para passarmos asn informações do produto vamos colocar como parâmetro desta funcão uma instância de
+    nossa requisição HTTP, pois assim todas as informações da requisição ficarão disponíveis em um objeto de fácil acesso:
+
+    public function adicionaCarrinho(Request $request) {
+        \Cart::add([
+            'id' => $request->id,
+            'name' => $request->name,
+            'price' => $request->price,
+            'quantity' => $request->qtd,
+            'attributes' => array(
+                'image' => $request->img
+            )
+        ]);
+    }
+
+    As chaves deste array passado no add já são definidos pela lib então tem que seguir o padrão, no attributes podemos passar um array com alguns valores a mais como uma imagem por Exemplo (valores que não são das chaves padrão)
+
+    Agora para que seja possível receber esses valores na requisição, ela tem que ser feita em um momento específico e estratégico. Por exemplo, na hora de clicar no botão de comprar na página de
+    detalhes de um produto. Pois assim a requisição terá os valores do produto em questão e a função do controller conseguirá adicioná-lo ao carrinho
+
+3. Vamos lá no details.blade e colocamos o botão de comprar dentro de um form, pois assim colocamos um action no form para redirecionar para a rota Post que executará o nosso Controller
+4. Além disso, precisamos colocar uma diretiva dentro do formulário (@csrf). Com isso o Laravel vai gerar um input do tipo hidden com um token para proteger nossa aplicação
+5. Também devemos criar os dados que vão ser passados na requisição, então criaremos inputs com esses valores dentro e os nomes igual foram usamos na action do controller
+
+    <form action="{{ route('site.addCarrinho') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="id" value="{{$produto->id}}">
+        <input type="hidden" name="name" value="{{$produto->nome}}">
+        <input type="hidden" name="price" value="{{$produto->preco}}">
+        <input type="number" name="qtd" value="1">
+        <input type="hidden" name="img" value="{{$produto->imagem}}">
+        <button class="btn orange btn-large">Comprar</button>
+    </form>
+
+******************************************************************************
+ESTILIZANDO CARRINHO E EXIBINDO ITENS
+
+1. Vamos criar a view carrinho.blade.php com a estrutura do categoria.blade
+2. Vamos alterar algumas informações como o título, e a estrutura invés de cards vamos usar tabelas para o carrinho (só pegar o código da tabela no materialize)
+3. Depois ajusta as colunas e linhas definindo o que vamo querer que apareça e criamos uma coluna para as ações, assim será possível mudar quantidade e remover um produto do carrinho
+4. Na função que estávamos debugando o conteúdo do carrinho vamos renderizar a view do carrinho
+
+    public function carrinhoLista() {
+        $itens = \Cart::getContent();
+        return view ('site.carrinho', compact('itens'));
+    }
+
+5. No carrinho basta usar o foreach para percorrer os itens passados pelo compact e ir criando linhas na tabela
+
+    - Encadeando o ->count() após o getContent podemos contar quandos produtos tem no carrinho
+    - Podemos usar botões prontos do materialize para as ações
+
+******************************************************************************
+RedirectWith
+
+Vamos mostrar uma mensagem quando um produto for adicionado com sucesso no carrinho e em seguida redirecionar, porque até então após o post estamos ficando em uma tela em branco. Fazemos isso com:
+
+    return redirect()->route('site.carrinho')->with('sucesso', 'Produto adicionado no carrinho com sucesso!');
+
+    usamos o redirect para redirecionar, encadeamos o route e especificamos qual o nome da rota que iremos, depois encademaos no with e damos um titulo e uma mensagem para ser exibida.
+    Mas para essa mensagem ser exibida precisamos preparar a nossa view da rota carrinho para mostrar esta mensagem
+
+    Então podemos colocar um if verificando a existência da mensagem, se existir mostra ela. Fazemos isso assim: 
+
+        @if ($mensagem = Session::get('sucesso'))
+            {{ $mensagem }}
+        @endif
+
+        O que está acontecendo aqui é buscarmos na sesão uma variável chamda sucesso (que foi passada com o with), se ela existir coloca em uma variável chamada $mensagem e depois exibimos ela. Senão não faz nada.
+
+Isso já vai funcionar, mas vamos estilizar essa mensagem colocando ela dentro de um card, ficando:
+
+    @if ($mensagem = Session::get('sucesso'))
+        <div class="card green">
+            <div class="card-content white-text">
+              <span class="card-title">Já é quase seu...</span>
+              <p>{{ $mensagem }}</p>
+            </div>
+        </div>
+    @endif
+
+Agora queremos que no nome carrinho do navbar seja exibido a quantidade de itens do carrinho
+
+    - Para isto, vamos simplesmente usar o getContent()->count() no layout.blade, mas colocaremos em um span com uma classe badge (que cria um bloquinho sepado pra estilizar):
+
+
+******************************************************************************
+Removendo itens do carrinho
+
+1. Criar rota para remover item do carrinho
+
+    Route::post('/remover', [CarrinhoController::class, 'removeCarrinho'])->name('site.removeCarrinho');
+
+2. Agora vamos criar nosso método no CarrinhoController:
+
+    public function removeCarrinho(Request $request){
+        \Cart::remove($request->id);
+        return redirect()->route('site.carrinho')->with('product-removed', 'Produto removido do carrinho com sucesso!');
+    }
+
+    Criei esse with com 'product-removed' porque eu queria criar uma estilização diferente para a mensagem de quando removesse um produto do carrinho, mas poderia ser reaproveitado último
+
+3. E por fim colocar o botão dentro de um form pra ele redirecionar para a rota com os dados necessários:
+
+    <form action="{{ route('site.removeCarrinho') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="id" value="{{$item->id}}">
+        <button class="btn-floating waves-effect waves-light red"><i class="material-icons">delete</i></button>
+    </form>
+
+******************************************************************************
+Atualizar quantidade de itens do carrinho
+
+1. Criar uma rota p/ atualizar a quantidade de um item do carrinho:
+
+    Route::post('/atualizar', [CarrinhoController::class, 'atualizaCarrinho'])->name('site.atualizaCarrinho');
+
+2. Criar o método que vai atualizar essa quantidade:
+
+    public function atualizaCarrinho(Request $request){
+        \Cart::update($request->id, [
+            'quantity' => [
+                'relative' => false,
+                'value' => $request->quantity
+            ]
+        ]);
+        return redirect()->route('site.carrinho')->with('sucesso', 'Quantidade atualizada com sucesso!');
+    }
+
+3. Agora vamos configurar o formulário que vai pegar o valor do input de quantidade e adicionar lá na rota:
+
+    {{-- BTN ATUALIZAR --}}
+    <form action="{{route('site.atualizaCarrinho')}}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="id" value="{{$item->id}}">
+        <td><input style="width: 40px; font-weight:900;" class="white center" type="number" name="quantity" value="{{ $item->quantity}}"></td>
+        <td>
+        <button class="btn-floating waves-effect waves-light orange"><i class="material-icons">refresh</i></button>
+    </form>
+
+******************************************************************************
+Limpando Carrinho
+
+1. Vamos criar uma rota para limpar o carrinho (pode ser do tipo GET mesmo porque não vamos precisar passar nenhuma informação já que vamos apagar tudo):
+
+    Route::get('/limpar', [CarrinhoController::class, 'limparCarrinho'])->name('site.limparCarrinho');
+
+2. Criar o método no controller:
+
+    public function limparCarrinho(){
+        \Cart::clear();
+        return redirect()->route('site.carrinho')->with('aviso', 'Seu carrinho está vazio!');
+    }
+
+    O clear() vai limpar o carrinho
+
+3. Agora para linkar isso no botão, ao invés de colocar em um formulário dessa vez vamos mudar o button para "<a>" e usar o href para redirecionar para a /limpar
+
+    a href="{{route('site.limparCarrinho')}}" class="btn waves-effect waves-light blue"> Limpar carrinho<i class="material-icons right">clear</i></a>
+
+******************************************************************************
+Fazendo alguns ajustes Finais no carrinho de compras
+
+1. Se não houver nenhum produto, não há necessidade de exibir uma tabela vazia:
+
+    - Então criamos um @if para verificar com o count() do carrinho está vazio, se sim mostra um aviso, se tiver produtos exibe o carrinho
+
+2. Tá dando para colocar valores negativos nas quantidades de itens:
+
+    - colocar a função de absolut abs() do php, módulo do número, tanto na hora de add quanto de atualizar produto na requisição
+    - colocar o atributo min="1" nas tags htmls do details e do carrinho
+
+    Dessa maneira o front não vai deixar que passe valores negativos, mas mesmo que passe o back-end vai tratar para que ele fique positivo
+
+3. Vamos exibir o valor total de nosso carrinho, basta usar o \Cart::Total() que já calcula o valor total. Mas vamos colocar em um card para ficar mais bacana:
+
+    <div class="card orange">
+        <div class="card-content white-text">
+          <span class="card-title" style="font-weight: bold">TOTAL: R$ {{ number_format(\Cart::getTotal(),2,',','.')}}</span>
+          <p>Pague em até 12x sem juros!</p>
+        </div>
+    </div>

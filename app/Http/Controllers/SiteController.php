@@ -20,6 +20,7 @@ class SiteController extends Controller
 
     public function categoria($id){
         $produtos_categoria = Produto::where('id_categoria',$id)->paginate(3);
-        return view ('site.categoria', compact('produtos_categoria'));
+        $nome_categoria = Categoria::find($id);
+        return view ('site.categoria', compact('produtos_categoria','nome_categoria'));
     }
 }
