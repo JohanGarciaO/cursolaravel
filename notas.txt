@@ -1377,3 +1377,168 @@ Fazendo alguns ajustes Finais no carrinho de compras
           <p>Pague em até 12x sem juros!</p>
         </div>
     </div>
+
+******************************************************************************
+AUTENTICAÇÃO SIMPLES
+
+Vamos criar nossa autenticação manualmente
+
+1. Criar um controller para nosso sistema de login
+
+    php artisan make:controller LoginController
+
+2. Importaremos no controller a nossa classe de autenticação
+
+    use Illuminate\Support\Facades\Auth;
+
+3. Criaremos o método que fará a autenticação, e como vamos receber o email e senha, via post, do usuário que for se autenticar, vamos colocar como parâmetro a instância da requisição
+
+    public function auth(Request $resquest){
+        $credenciais = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required']
+        ]);
+
+        if(Auth::attempt($credenciais)){
+            $request->session()->regenerate();
+            return redirect()->intended('dashboard');
+        }else{
+            return redirect()->back()->with('mensagem', 'Usuário ou senha inválido.');
+        }
+
+    }
+
+    - repare que criamos uma variável e encadeamos o método validate no objeto da requisição, isso serve para fazer validações dos valores antes de tentarmos autenticar
+    - para o email, exigimos que fosse require (não pode está vazio) e fosse do tipo email (seguir os padrões de ter @ e etc)
+    - para a senha simplesmente dissemos que deve ser obrigatória
+
+    - depois de fato fizemos a autenticação, usamos a classe Auth e seu método attempt para realizar a autenticação com a nossa variável $credenciais que já possui os valores de email e senha validados,
+      se a autenticação for feita com sucesso, então geramos um id para a sessão com o session()->regenerate() e em seguida redirecionamos a página usando o intended()
+
+      intended('default'): ele vai redirecionar para a página que estava antes, mas se não for possível redireciona para a que for passada como parâmetro
+
+    - e caso a autenticação não for reealizada com sucesso a página simplesmente redireciona de volta para a página naterior e passa com o with() uma mensagem de erro.
+
+******************************************************************************
+VALIDAÇÕES
+
+Primeiramente vamos na pasta de views e criar uma pasta chamada login e dentro uma viem chamada form.blade.php
+
+1. Criamos um formulário para realizar login
+
+    @if($error = Session::get('error'))
+
+        {{ $error }}
+
+    @endif
+
+    <form action="{{ route('login.auth') }}" method="POST" >
+    @csrf
+
+        Email: <input type="email" name="email"><br>
+        Senha: <input type="password" name="password"><br>
+
+        <button type="submit">Entrar</button>
+
+    </form>
+
+2. Criamos tanto a rota que vai exibir o formulário quanto a rota que vai processar o nosso post de login
+
+    - No caso como uma dessas rotas é só para mostrar uma view, nem precisamos passar por um controller, já podemos direto fazer a rota retornar uma view
+
+        Route::view('/login', 'login.form')->name('login.form');
+
+    - agora criaremos uma rota do tipo post que vai validar o login (vai ser o controller auth)
+
+        Route::post('/auth', [LoginController::class, 'auth'])->name('login.auth');
+
+3. Perceba agora que ao colocar um email e senha que não está na base de dados vai mostrar a mensagem de erro, mas se não passarmos nada não vai mostrar nada. Isso ocorre porque devemos tratar os erros advindos da validação
+
+    @if ($errors->any())
+        @foreach ($errors->all() as $error)
+            {{$error}} <br>
+        @endforeach
+    @endif
+
+    Deste modo, caso tenha sido gerado algum erro não importa qual, vai entrar no if, e então faremos um foreach percorrendo todos os erros e exibindo na tela.
+
+    Caso queira personalizar as mensagens de erro do validate() basta pasar um outro array onde a chave é nome nome do campo.validacao
+
+        $credenciais = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required']
+        ],[
+            'email.required' => 'O e-mail é obrigatório.',
+            'email.email' => 'O e-mail precisa ser válido.',
+            'password.required' => 'A senha é obrigatória.',
+        ]);
+
+4. Se tentarmos nos autenticar com com um login e senha que está no banco, já vai funcionar. Só que vai dar 404 pois ainda não criamos a nossa rota dashboard
+
+******************************************************************************
+REDIRECIONANDO PARA O DASHBOARD
+
+Agora precisamos criar a nossa rota dashboard, o nosso controller e a nossa view
+
+1. Criamos a rota (já deve ter sido gerado o Controller antes):
+
+    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+
+2. Vamos criar o método index no Controller a princípio só exibindo a view 'admin.dashboard'
+3. Agora criamos a view dashboard
+
+******************************************************************************
+EXIBINDO DADOS DO USUÁRIO
+
+A partir de nosso método Auth conseguimos recuperar os dados do usuário que está autenticado sem precisar importar nada (ou seja, após autenticado o auth fica disponível em qualquer view), ex:
+
+    <h1>Olá, {{ auth()->user()->firstName }}.</h1>
+
+    uso o auth() encadeio no usuário por exemplo, e depois no campo que quero recuperar
+
+Por exemplo, podemos ir lá na nossa come e criar um novo menu no navbar que mostrar o nome de quem tá logado e um dropdown
+
+    <ul id="nav-mobile" class="right">
+        <li><a class='dropdown-trigger' href='' data-target='dropdown1'>Olá, {{auth()->user()->firstName}} <i class="material-icons right">arrow_downward</i></a></li>
+    </ul>
+
+******************************************************************************
+LOGOUT
+
+Precisamos criar um botão de logout no nosso dropdown de funções do usuário, e também essa funcionalidade
+
+Então no controller vamos criar um método logout que recebe como parâmetro o Resquest da requisição (pra deslogar não precisa passar nada, só Auth::logout()) mas passamos resquest para invalidar a sessão que estava ativar (porque se não fizer isso
+e alguem tiver copiado os cookies vai conseguir logar mesmo depois de ter apertado o botão de logar se clonar o cookie anterior)
+
+Ficando:
+
+    public function logout(Request $request){
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/');
+    }
+
+    - Primeiro deslogamos
+    - Segundo invalidamos a sessão
+    - Geramos um novo token para a sessão
+    - Redirecionamos a página para o index
+
+    se quiser passar o nome da rota ao invés do path pode usar o route:
+
+        return redirect(route('site.index'));
+
+Também não pode esquecer de criar a rota:
+
+    Route::get('/logout', [LoginController::class, 'logout'])->name('login.logout');
+
+Agora só tem mais um problema, vai dar erro porque o menu de usuário que criamos para o usuário no layout.blade está mostrando informações de um usuário autenticado que não existe. 
+Então utilizaremos a diretiva @auth para o bloco só aparecer quando tiver uma sessão ativa, e um @else antes de sair da diretiva auth para mostrar um botão de login caso ninguém esteja logado. Ficando:
+
+    <ul id="nav-mobile" class="right">
+        @auth
+        <li><a class='dropdown-trigger' href='' data-target='dropdown2'>Olá, {{auth()->user()->firstName}} <i class="material-icons right">arrow_downward</i></a></li>
+        @else
+        <li><a href="{{ route('login.form') }}">Login<i class="material-icons right">login</i></a></li>
+        @endauth
+    </ul>

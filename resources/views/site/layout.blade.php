@@ -18,13 +18,27 @@
         @endforeach
     </ul>
 
+    <ul id='dropdown2' class='dropdown-content'>
+        <li><a href="{{ route('admin.dashboard') }}">Dashboard</a></li> 
+        <li><a href="{{ route('login.logout') }}">Sair</a></li> 
+    </ul>
+
     <nav class="red">
         <div class="nav-wrapper container">
             <a href="#" class="brand-logo center">CursoLaravel</a>
+
             <ul id="nav-mobile" class="left">
                 <li><a href="{{ route('site.index') }}">Home</a></li>
                 <li><a class='dropdown-trigger' href='' data-target='dropdown1'>Categorias <i class="material-icons right">arrow_downward</i></a></li>
                 <li><a href="{{ route('site.carrinho') }}">Carrinho <span style="font-weight:900;" class="new badge white black-text" data-badge-caption=""> {{ \Cart::getContent()->count() }} </span></a></li>
+            </ul>
+
+            <ul id="nav-mobile" class="right">
+                @auth
+                <li><a class='dropdown-trigger' href='' data-target='dropdown2'>Olá, {{auth()->user()->firstName}} <i class="material-icons right">arrow_downward</i></a></li>
+                @else
+                <li><a href="{{ route('login.form') }}">Login<i class="material-icons right">login</i></a></li>
+                @endauth
             </ul>
 
         </div>
