@@ -1542,3 +1542,78 @@ Então utilizaremos a diretiva @auth para o bloco só aparecer quando tiver uma 
         <li><a href="{{ route('login.form') }}">Login<i class="material-icons right">login</i></a></li>
         @endauth
     </ul>
+
+******************************************************************************
+MIDDLEWARES
+
+São filtros de requisição HTTP, o Laravel já disponibiliza alguns, inclusive o de autenticação. Mas também podemos criar os nossos middlewares.
+
+É no arquivo Http/Kernel.php que os middlewares são definidos, eles podem ser divididos em grupos ou individuais.
+
+Como aplicamos um Middleware? 
+
+    - Pode aplicar na rota: basta encadear o método middleware diretamente na criação da rota no arquivo web.php
+
+        Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard')->middleware('auth');
+
+        Encadeamos o middleware de autenticação na nossa rota da página do administrador, vamos só mudar o argumento de direcionamento da rota no arquivo do middleware para que caso não tenha ninguém logado levar para a rota login.form
+
+    - Também podemos aplicar em um Controller
+
+        Basta dentro do controller colocar um método construtor que encadeia o This (a instância) com o middleware
+
+        public function __construct(){
+            $this->middleware('auth');
+        }
+
+    - Podemos aplicar em métodos específicos invés de aplicar a classe toda. Deste modo, ainda no construtor, encadearíamos com o only e espeficaríamos o método que usaria o middleware:
+
+        public function __construct(){
+            $this->middleware('auth')->only('index');
+        }
+
+        poderia ser um array de métodos, ex: ['index','home','contato']
+
+    - Também podemos aplicar a todos com exceção de algum usando o ->except('')
+
+******************************************************************************
+CRIANDO OS MIDDLEWARES
+
+Usamos: php artisan make:middleware CheckEmail
+
+Depois registramos no arquivo Kernel.php lá na routeMiddleware:
+
+    'checkemail' => \App\Http\Middleware\CheckEmail::class,
+
+Agora dentro do middleware vamos verificar se o email do usuário é do tipo gmail:
+
+    1. O método handle da forma como vem asism que criado não faz nada, simplesmente passa para a frente a requisição sem nenhum filtro
+
+        public function handle(Request $request, Closure $next)
+        {
+            return $next($request);
+        }
+
+        O middleware serve justamente para montarmos um filtro, então vamos criar a nossa condição
+
+    2. Primeiramente vamos verificar se tem alguem logado, caso não tenha já vamos redirecionar para a página de login
+
+        if(!auth()->check()){
+            return redirect(route('login.form'));
+        }
+
+    3. Agora vamos pegar o email da requisição e verificar se de fato é gmail ou não
+
+        $email = auth()->user()->email;
+        $data = explode('@', $email);
+        $data = explode('.',$data[1]);
+
+        $servidorEmail = $data[0];
+
+        if ($servidorEmail != 'gmail') {
+            return redirect((route('login.form')));
+        }
+
+    Desse modo se não cair em nenhuma das duas verificações, ele vai proceder com a solicitação http. E para usarmos o middleware basta acrescentá-lo na rota, ex:
+
+    ->middleware(['auth','checkemail'])
