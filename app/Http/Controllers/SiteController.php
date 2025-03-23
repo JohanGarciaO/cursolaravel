@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Produto;
 use App\Models\Categoria;
+use Illuminate\Support\Facades\Gate;
 
 class SiteController extends Controller
 {
@@ -14,7 +15,24 @@ class SiteController extends Controller
     }
 
     public function details($slug){
+
+        if(!auth()->check()){
+            return redirect()->route('site.index');
+        }
+
         $produto = Produto::where('slug',$slug)->first();
+
+        // Gate::authorize('ver-produto', $produto);
+        // $this->authorize('verProduto', $produto);
+
+        if (auth()->user()->can('verProduto', $produto)) {
+            return view('site.details', compact('produto'));
+        }
+
+        if (auth()->user()->cannot('verProduto', $produto)) {
+            return redirect()->route('site.index');
+        }
+        
         return view ('site.details', compact('produto'));
     }
 

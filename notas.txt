@@ -1617,3 +1617,196 @@ Agora dentro do middleware vamos verificar se o email do usuário é do tipo gma
     Desse modo se não cair em nenhuma das duas verificações, ele vai proceder com a solicitação http. E para usarmos o middleware basta acrescentá-lo na rota, ex:
 
     ->middleware(['auth','checkemail'])
+
+******************************************************************************
+REGISTER
+
+Agora precisamos criar um formulário para os nossos usuário se registrarem em nosso sistema
+
+1. Vamos criar uma view na pasta login chamada create.blade.php com a mesma estrutura do form de cadastro como modelo
+2. Dentro vamos criar um form com todos os campos necessários, neste form vamos colocar o action para 'users.store' pois logo iremos criar um controller que gerenciará toda a lógica relacionada ao cadastro do usuário
+
+    Os names dos campos colocaremos iguais ao banco de dados (para facilitar, mas não é obrigado fazer isso, Faremos por boas práticas)
+
+3. Agora criaremos o nosso controller UserController do tipo resource
+
+    php artisan make:controller UserController -r
+
+    Sendo do tipo resource já irá vir com alguns métodos prontos, e um deles é o STORE que será responsável por pegar todos os dados do formulário
+
+4. Agora iremos recuperar os dados do formulário em nosso Controller:
+
+    No método store...
+
+        $user = $request->all(); // Pega todos os campos e coloca em um array
+        $user['password'] = bcrypt($request->password); // criptografa a senha para salvar no banco
+
+    Devemos lembrar de importar a Model (só não vamos criar porque ela já está criada)
+
+    Em seguida criamos o usuário no banco com:
+
+        $user = User::create($user);
+
+    Agora já iremos fazer o login para o usuário recém criado:
+
+        - Importamos o Auth (nossa classe de autenticação)
+
+        - Fazemos o login do usuário com:
+            Auth::login($user);
+            Passando a instância do usuário
+
+        - Redirecionamos para a dashboard:
+            return redirect()->route('admin.dashboard');
+
+5. Agora criaremos a rota que renderiza a view de cadastro:
+
+    Route::get('/register', [LoginController::class, 'create'])->name('login.create');
+
+    Para isso, devmos criar o método create dentro do LoginController
+
+6. Criaremos a nossa rota resource, primeiro importamos o controller e depois criamos a rota:
+
+    Route::resource('users', UserController::class);
+
+******************************************************************************
+REMEMBER
+
+Vamos implementar aquela função de permanecer logado no site.
+
+1. Criar um checkbox na view com o formulário de login
+
+    <input type="checkbox" name="remember"> Lembrar-me<br>
+
+2. Vamos recuperar esse dado no LoginController
+
+    Agora basta adicionar o valor dentro da função attempt pois o laravel já tem esse funcionalidade pronta.
+
+    if(Auth::attempt($credenciais, $request->remember)){}
+
+    Isso fará com que seja criado um cookie remember_web (que vai ser o gatinho da autenticação para verificar se o usuário autenticado foi lembrado)
+
+Os cookies e token de sessão expiram muito rápidos, então se o usuário ficxar muito tempo sem entrar no site o site vai deslogar, mas com o remember_token a data de expiração é de mais de uma ano, logo quando o usuário for tentar logar 
+no site não terá o token e o id de sessão mas terá o remember, ent o sistemas irá conferir no banco se o token do remember é válido e se for ele irá gerar novos cookies de sessão e logar automaticamente o usuário.
+
+******************************************************************************
+AUTORIZAÇÃO COM GATE
+
+Já aprendemos sobre autenticação, agora vamos abordar AUTORIZAÇÃO
+
+Por exemplo, vamos fazer com que só seja possível ver os detalhes de um produto apenas para quem cadastrou ele.
+
+Para isso, uma maneira de resolver pode ser utilizando os Gates
+
+1. Dentro de Providers, temos o AuthServiceProvider.php, e dentro tem o método boot(). Lá vamos definir uma regra
+
+    Gate::define('ver-produto', function(User $user, Produto $produto){
+        return $user->id == $produto->id_user;
+    });
+
+    Com isso, usando o método define da classe Gate, vamos dar um nome 'ver-produto' e uma função de callback. Neste função vamos pendurar nela duas variáveis que vão ser as intâncias das models do usuário e do produto.
+
+    Agora fazer um retorno a condição que deixará a regra verdadeira. Neste caso, queremos que o id do usuário que criou determinado produto seja o mesmo id do usuário que está autenticado. Pois assim garantiremos
+    que só o criador de um determinado produto conseguirá passar por essa regra.
+
+    - Lembrar de importar as models no AuthServiceProvider
+    - Importar o Gate no SiteController, que é onde está o método de exibir os detalhes de um produto
+
+2. Para adicionar o gate no método details basta adicionar a linha:
+
+    Gate::authorize('ver-produto', $produto);
+
+    Ele já vai tentar realizar a autorização do $produto com o Gate 'ver-produto' e já captura automaticamente o usuário logado dentro do Gate.
+
+******************************************************************************
+AUTORIZAÇÃO COM POLICIES
+
+É uma outra maneira de fazermos a autorização
+
+1. Criaremos o policy
+
+    php artisan make:policy ProdutoPolicy
+
+2. Agora basta criar as nossas regras dentro do policy, mesma lógica do outro só que dentro de um método
+
+    public function verProduto(User $user, Produto $produto){
+        return $user->id == $produto->id_user;
+    }
+
+3. Precisamos registrar o nosso Policy, para isso:
+
+    - No AuthServiceProvider tem um array de $policies onde lá ficam todas as relações de model e com qual policy ele está associado
+
+        'App\Models\Produto' => 'App\Policies\ProdutoPolicy',
+
+    - Mais para baixo no método boot() tem uma linha com o conteúdo:
+
+        $this->registerPolicies();
+
+        Esta linha registra todos os policies que estão naquele array. (NÃO PRECISA MAIS DA LINHA QUE DEFINIA UM GATE)
+
+4. Agora vamos de fato autorizar:
+
+    Lá no detail invés do Gate::authorize vamos usar apenas
+
+    $this->authorize('verProduto', $produto);
+
+E pronto, já vamos estar fazendo a autorização com Policies
+
+******************************************************************************
+RESTRINGINDO RECURSO NA VIEW COM CAN E CANNOT
+
+Se não vamos deixar os usuário que não são os criadores dos produtos ver eles então não faz sentido deixar visível aquele ícone de olhingo que clica e entra na rota de details, então vamos restringir este recurso
+
+Então vamos restringir este recurso para quem não estiver autorizado e para quem não tiver autenticado
+
+Precisamos escolher entre Gate ou Policy, mas na hora de restringir no arquivo blade, vamos usar a diretiva @can('nomeRegra', $objeto)
+
+    @can('verProduto', $product)
+    <a href="{{ route('site.details', $product->slug) }}" class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons">visibility</i></a>
+    @endcan
+
+    Por exemplo aqui eu coloquei o nome da regra da policy e passei a instância do produto (lembrando que como o policy é um provider, não precisamos nem importar nada porque todas as views já reconhecem ele)
+
+Pense comigo, se na lógica da regra só vai dar true se o usuário for o mesmo que criou o produto, logo a regra já abrange não só o criador do produto mas também se tem alguém autenticado, porque quando não tiver ninguém autenticado
+esse ninguém não terá um id para combinar com o do produto
+
+Também pode ser adicionado um else para caso queira exibir algum conteúdo se o usuário não estiver autorizado
+
+
+Assim como tem o CAN, também temos o CANNOT que é o seu inverso (vai exibir o conteúdo se o usuário não tiver autenticado, e com else mostra se ele tiver autenticado)
+
+******************************************************************************
+#70 Restrigindo acesso com Allows e Denies, Can e Cannot
+
+Assim como restringimos conteúdos nas views, também podemos fazer isso nos controllers
+
+Vou retirar o CAN do home.blade só para aparecer o botão de entrar na details para todos.
+
+Maneira utilizando Allows e Denies | Vou criar duas condições:
+
+    if (Gate::allows('ver-produto', $produto)) {
+        return view('site.details', compact('produto'));
+    }
+
+    if (Gate::denies('ver-produto', $produto)) {
+        return redirect()->route('site.index');
+    }
+
+    - A primeira vai autorizar a renderização da view details caso passe pela a regra
+    - A segunda vai entrar no if caso não seja autorizado (não passe pela regra), e assim vai redirecionar de volta para a home
+
+Maneira utilizando CAN e CANNOT | Vou criar duas condições:
+
+    if (auth()->user()->can('verProduto', $produto)) {
+        return view('site.details', compact('produto'));
+    }
+
+    if (auth()->user()->cannot('verProduto', $produto)) {
+        return redirect()->route('site.index');
+    }
+
+    - A primeira vai autorizar a renderização da view details caso passe pela a regra da Policy
+    - A segunda vai entrar no if caso não seja autorizado (não passe pela regra), e assim vai redirecionar de volta para a home
+
+Repare que deste segundo modo, estamos utilizando o auth()->user() para depois encadear o can, se você pensar bem. Quando não tiver ninguém logado e clicar no botão, invés de redirecionar vai dar um erro porque se nem existe usuário autenticado 
+como daria pra encadear um outro método, então para evitar isso podemos fazer um if antes verificando se tem alguém conectado e se não tiver redirecionar para o site.index
