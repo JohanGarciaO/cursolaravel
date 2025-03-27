@@ -27,8 +27,8 @@ class CheckEmail
 
         $servidorEmail = $data[0];
 
-        if ($servidorEmail != 'gmail') {
-            return redirect((route('login.form'))); 
+        if ($servidorEmail != 'gmail' && $servidorEmail != 'admin') {
+            return redirect((route('login.form')));
         }
 
         return $next($request);

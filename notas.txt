@@ -229,7 +229,7 @@ Comandos migrations:
 php artisan migrate -> executa todos os migrations (cria todas as tabelas)
 
 migrate:fresh -> deleta todas as tabelas e depois reexecuta todas as migrações
-migrate:install 
+migrate:install
 migrate:refresh -> reseta e já reexecuta, ele meio que dar um reset e depois executa tudo
 migrate:reset -> reverte todas as migrações (é tipo um rollback, mas de todas as migrações)
 migrate:rollback -> desfaz o último migrate (a última migração)
@@ -334,9 +334,9 @@ CRIANDO TABELAS USERS, CATEGORIAS E PRODUTOS
     }
 
     Como o Relacionamento é cascade se um usuário for deletado todos os produtos daquele usuário também será deletado
-    
+
     Quabdo usamos estes métodos nas colunas/relacionamentos estamos encadeando uma propriedade...
-    EX: 
+    EX:
         ->unique(): define aquela coluna com de valor único
         ->nullable(): permite valores nulos
 3. Vamos criar os Models e Migrations necessários
@@ -390,7 +390,7 @@ Vamos criar um seeder para adicionar um usuário em nossa tabela
     }
 
 5. Agora no DatabaseSeeder iremos utilizar o $this para passar um array com classes de Seeders que serão executadas
-    
+
     public function run()
     {
         // \App\Models\User::factory(10)->create();
@@ -413,7 +413,7 @@ FACTORY
 
     public function definition()
     {  return [
-            'nome' => $this->faker->unique()->word, // gera uma palavra fake única      
+            'nome' => $this->faker->unique()->word, // gera uma palavra fake única
             'descricao' => $this->faker->text,
         ];
     }
@@ -447,7 +447,7 @@ MFSCR
 Podemos criar todos esse recursos com um só comando, com:
 
     php artisan make:model Teste --migration --factory --seed --controller --
-    
+
 Ou,
 
     php artisan make:model Teste -mfscr
@@ -463,7 +463,7 @@ Pluck: extrai uma informação de uma tabela (no nosso caso queremos o id das ta
 O definition() de nossa factory ficou da seguinte maneira:
 
     public function definition()
-    {   
+    {
         $name = $this->faker->unique()->sentence(); // Define o valor de nome antes para colocar em uma variável
         return [
             'nome' => $name, // define nome
@@ -493,7 +493,7 @@ RELACIONAMENTOS
     - php artisan make:migration regras --create=regras
 
     Antes nós tinhamos um relacionamento de 1 para muitos entre produtos e usuários (1 user pode ter muitos produtos)
-    
+
 2. Agora vamos criar um relacionamento de 1:1 entre usuário e contato para que cada usuário tenha apenas 1:
 
     public function up()
@@ -504,7 +504,7 @@ RELACIONAMENTOS
             $table->string('cep');
             $table->string('numero');
             $table->string('whatsapp');
-            
+
             $table->unsignedBigInteger('id_user');
             $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
 
@@ -573,7 +573,7 @@ QUAL É O FLUXO???
     return view('news');
 
     Isso mesmo, não precisa botar a extenção, o Laravel já interpreta tudo
-    
+
     Desse modo vamos conseguir renderizar um HTML em nossa aplicação.
 
     Obs.: Caso dentro da pasta View a gente tivesse uma outra pasta chamada Site bastava passa o caminho com / ou . que seria renderizado.
@@ -630,7 +630,7 @@ Dentro do layout vamos gerar uma estrutura padrão de HTML e no body vamos usar 
     </body>
 
 Agora para herdar a estrutura de um .blade podemos usar a diretiva @extends, então no home.blade podemos herdar o layout
-    
+
     Logo, dentro do arquivo colocamos apenas: @extends('site.layout') e já vai herdar a estrutura
 
     Mas ainda no home delimitamos através da @section() e @endsection onde será encontrado o nosso conteúdo
@@ -648,7 +648,7 @@ Desse modo, a home.blade ficou:
     Isso herda a estrutura html que foi colocada no layout e coloca o que está delimitado na @section dentro de onde foi apontado no @yield do layout
 
 Podemos por exemplo criar uma sessão para o title e um yield no layout e aí o título ficará dinâmico, isso pode ser feito com o @sectione @endsection
-normalmente ou em apenas uma linha passando dois parâmetros para o section:     
+normalmente ou em apenas uma linha passando dois parâmetros para o section:
 
     @section('title','home')
 
@@ -672,13 +672,13 @@ Comentários e Operador Ternário
 Comentários: no blade usamos {{--comentário--}} duplo traço dentro de dupla chaves
     - Estes comentários não são renderizados em nosso código fonte
 
-Operador Ternário: 
+Operador Ternário:
 
     Como exemplo vamos verificar a existência de uma variável e exibir um conteúdo:
 
         {{ isset($nome) ? $nome : 'Sem nome'}}
 
-    Também podemos definir um valor padrão para uma variável, será mostrado caso a variável não exista. Fazemos isso com: 
+    Também podemos definir um valor padrão para uma variável, será mostrado caso a variável não exista. Fazemos isso com:
 
         {{$teste ?? 'Padrão'}}
 
@@ -721,7 +721,7 @@ Também temos o bom e velho Switch:
         @case(21)
             Idade está errada
             @break
-        @default            
+        @default
     @endswitch
 
 Obs.: lembrando que com os snippets só em escrever switch ele já autocompleta, assim como para as outras estruturas
@@ -818,7 +818,7 @@ COMPONENT
 2. Para usar esse Component no home basta usar a diretiva @component:
 
     @component('components.sidebar')
-        
+
     @endcomponent
 
 3. Para cria um conteúdo dinâmico p/ esse component usamos a diretiva @slot passando um nome:
@@ -832,7 +832,7 @@ COMPONENT
 4. E para utilizar esse conteúdo dinâmico no Component basta usar a tag de impressão e o nome do slot {{$paragrafo}}
 
 ******************************************************************************
-STRACKS e PUSH
+STACKS e PUSH
 
 Os Stracks são usados para controlar em quais views serão renderizados determinados scripts, estílos ou arquivos externos
 
@@ -846,14 +846,14 @@ Então para controlar isso e definir quem de fato fará uso daquelas importaçõ
 
     Coloca isso no layout.blade
 
-Aí na view que queremos utilizar, usamos o @push para carregar determinada importação para o @Strack do template:
+Aí na view que queremos utilizar, usamos o @push para carregar determinada importação para o @Srack do template:
 
     @push('style')
         <!-- Compiled and minified CSS -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     @endpush
 
-    Isso vai carregar o @strack 'style' com o css do materialize, e como tem um strack chamado style no template layout.blade. Na renderização o que tiver sido carregado no @push aparecerar em seu devido @Strack
+    Isso vai carregar o @stack 'style' com o css do materialize, e como tem um stack chamado style no template layout.blade. Na renderização o que tiver sido carregado no @push aparecerá em seu devido @Stack
 
 ******************************************************************************
 VIEWCACHE e VIEWCLEAR
@@ -865,7 +865,7 @@ VIEWCACHE e VIEWCLEAR
 
 O Laravel compila nossas views por demanda, então ele escolhe o melhor momento para compilar as views. Depois ele se encarrega de verificar se alguma view foi modificada para recompilá-la
 
-    - php artisan view:cache 
+    - php artisan view:cache
         Força o Laravel a pré-compilar as views para ter um melhor desempenho (mas não é muito recomendado)
 
     - php artisan view:clear
@@ -898,13 +898,13 @@ Vamos implementar um Framework CSS via CDN.
 3. Agora vamos ao conteúdo no nosso home.blade:
 
     <div class="row container">
-        <div class="col s12 m3">            
+        <div class="col s12 m3">
         </div>
-        <div class="col s12 m3">            
+        <div class="col s12 m3">
         </div>
-        <div class="col s12 m3">            
+        <div class="col s12 m3">
         </div>
-        <div class="col s12 m3">            
+        <div class="col s12 m3">
         </div>
     </div>
 
@@ -916,7 +916,7 @@ Vamos implementar um Framework CSS via CDN.
 
     Então, dentro dos col colocamos o restante do conteúdo dos cards
 
-    Repare que só em fazer isso não vai funcionar completamente, se o card tiver imagem não vai aparecer porque de fato não baixamos a imagem para nossa raiz, agora os ícones vão dar errado pq não instalamos o pacote 
+    Repare que só em fazer isso não vai funcionar completamente, se o card tiver imagem não vai aparecer porque de fato não baixamos a imagem para nossa raiz, agora os ícones vão dar errado pq não instalamos o pacote
     de ícones do materialize
 
     Então para isso, vamos no site do materialize->componentes->icons e lá vai ter um link para importarmos via CDN
@@ -927,11 +927,11 @@ Vamos implementar um Framework CSS via CDN.
 ******************************************************************************
 AGORA VAMOS DE FATO FAZER A LISTAGEM DOS PRODUTOS
 
-    1. Primeiro vamos recaptular: temos uma rota resource chamada Produtos, nela, uma de suas rotas é a index, vamos apagar o conteúdo e deixar somente a listagem dos produtos para dentro de uma variável com o 
+    1. Primeiro vamos recaptular: temos uma rota resource chamada Produtos, nela, uma de suas rotas é a index, vamos apagar o conteúdo e deixar somente a listagem dos produtos para dentro de uma variável com o
         método ::all do nosso ORM (o Eloquent)
 
         $produtos = Produto::all();
-        
+
         Onde Produto é nossa Model
 
     2. Para passar o objeto produtos para a nossa view é muito simples, basta usar o Compact:
@@ -943,7 +943,7 @@ Antes de listarmos os produtos lembre de ter executado suas seeders com php arti
     3. Vamos criar um loop com a diretriz foreach no home.blade e lá colocamos o card consumindo o produto
 
         @foreach ($produtos as $product)
-            <div class="col s12 m3">    
+            <div class="col s12 m3">
                 <div class="card">
                     <div class="card-image">
                         <img src="{{$product->imagem}}">
@@ -953,7 +953,7 @@ Antes de listarmos os produtos lembre de ter executado suas seeders com php arti
                         <span class="card-title">{{$product->nome}}</span>
                         <p>{{$product->descricao}}</p>
                     </div>
-                </div>    
+                </div>
             </div>
         @endforeach
 
@@ -1102,7 +1102,7 @@ Vamos criar um menu Dropdown no nosso navbar de modo que liste nossas categorias
 
     <ul id='dropdown1' class='dropdown-content'>
         @foreach ($categoriaMenu as $categoria)
-            <li><a href="#!">{{$categoria->nome}}</a></li>            
+            <li><a href="#!">{{$categoria->nome}}</a></li>
         @endforeach
     </ul>
 
@@ -1123,7 +1123,7 @@ LISTAR PRODUTOS DE UMA CATEGORIA
 4. Logo, precisamos criar uma view para renderizar o conteúdo desta listagem. E agora é só listar como preferir, para ganhar tempo vamos usar a mesma estrutura da home e adicionar só um title "Categoria:" e embaixo irá mostrar os cards. Vamos apagar só os links de paginação
 5. Agora definiremos as rotas no dropdown do layout.blade, no href usamos o método route passando o nome da rota e o obj da categoria:
 
-    <li><a href="{{ route('site.categoria',$categoriaM->id) }}">{{$categoriaM->nome}}</a></li>  
+    <li><a href="{{ route('site.categoria',$categoriaM->id) }}">{{$categoriaM->nome}}</a></li>
 
     mesmo que eu tivesse passado o objeto todo ao iinvés de só o id o método ainda ia conseguir identificar
 
@@ -1154,7 +1154,7 @@ Agora implementaremos um carrinho de compras em nossa aplicação utilizando a b
 Mas antes de instalarmos essa biblioteca iremos executar o comando: composer self-update
 Isso irá atualizar o próprio composer caso seja necessário
 
-Agora deve ser instalada a lib e adicionada no array provides da config/app/php a linha: 
+Agora deve ser instalada a lib e adicionada no array provides da config/app/php a linha:
     Darryldecode\Cart\CartServiceProvider::class
 
 E no array aliases a linha:
@@ -1166,17 +1166,17 @@ Agora vamos criar um controller para nosso carrinho: php artisan make:controller
 Agora vamos criar um método para lista todos os produtos de nosso carrinho
 
     public function carrinhoLista() {
-        
+
     }
 
 Só que para essa action ser executada precisamos implementar a rota que levará até ela
 
-    - Primeiro importa o controller com: 
-    
+    - Primeiro importa o controller com:
+
         use App\Http\Controllers\CarrinhoController;
 
-    - E depois cria a rota com: 
-    
+    - E depois cria a rota com:
+
         Route::get('/carrinho', [CarrinhoController::class, 'carrinhoLista'])->name('site.carrinho');
 
 Podemos usar o getContent para obter o conteúdo do carrinho e o dd (Die and Dump) para debugar na tela:
@@ -1257,7 +1257,7 @@ Vamos mostrar uma mensagem quando um produto for adicionado com sucesso no carri
     usamos o redirect para redirecionar, encadeamos o route e especificamos qual o nome da rota que iremos, depois encademaos no with e damos um titulo e uma mensagem para ser exibida.
     Mas para essa mensagem ser exibida precisamos preparar a nossa view da rota carrinho para mostrar esta mensagem
 
-    Então podemos colocar um if verificando a existência da mensagem, se existir mostra ela. Fazemos isso assim: 
+    Então podemos colocar um if verificando a existência da mensagem, se existir mostra ela. Fazemos isso assim:
 
         @if ($mensagem = Session::get('sucesso'))
             {{ $mensagem }}
@@ -1532,7 +1532,7 @@ Também não pode esquecer de criar a rota:
 
     Route::get('/logout', [LoginController::class, 'logout'])->name('login.logout');
 
-Agora só tem mais um problema, vai dar erro porque o menu de usuário que criamos para o usuário no layout.blade está mostrando informações de um usuário autenticado que não existe. 
+Agora só tem mais um problema, vai dar erro porque o menu de usuário que criamos para o usuário no layout.blade está mostrando informações de um usuário autenticado que não existe.
 Então utilizaremos a diretiva @auth para o bloco só aparecer quando tiver uma sessão ativa, e um @else antes de sair da diretiva auth para mostrar um botão de login caso ninguém esteja logado. Ficando:
 
     <ul id="nav-mobile" class="right">
@@ -1550,7 +1550,7 @@ São filtros de requisição HTTP, o Laravel já disponibiliza alguns, inclusive
 
 É no arquivo Http/Kernel.php que os middlewares são definidos, eles podem ser divididos em grupos ou individuais.
 
-Como aplicamos um Middleware? 
+Como aplicamos um Middleware?
 
     - Pode aplicar na rota: basta encadear o método middleware diretamente na criação da rota no arquivo web.php
 
@@ -1685,7 +1685,7 @@ Vamos implementar aquela função de permanecer logado no site.
 
     Isso fará com que seja criado um cookie remember_web (que vai ser o gatinho da autenticação para verificar se o usuário autenticado foi lembrado)
 
-Os cookies e token de sessão expiram muito rápidos, então se o usuário ficxar muito tempo sem entrar no site o site vai deslogar, mas com o remember_token a data de expiração é de mais de uma ano, logo quando o usuário for tentar logar 
+Os cookies e token de sessão expiram muito rápidos, então se o usuário ficxar muito tempo sem entrar no site o site vai deslogar, mas com o remember_token a data de expiração é de mais de uma ano, logo quando o usuário for tentar logar
 no site não terá o token e o id de sessão mas terá o remember, ent o sistemas irá conferir no banco se o token do remember é válido e se for ele irá gerar novos cookies de sessão e logar automaticamente o usuário.
 
 ******************************************************************************
@@ -1808,5 +1808,104 @@ Maneira utilizando CAN e CANNOT | Vou criar duas condições:
     - A primeira vai autorizar a renderização da view details caso passe pela a regra da Policy
     - A segunda vai entrar no if caso não seja autorizado (não passe pela regra), e assim vai redirecionar de volta para a home
 
-Repare que deste segundo modo, estamos utilizando o auth()->user() para depois encadear o can, se você pensar bem. Quando não tiver ninguém logado e clicar no botão, invés de redirecionar vai dar um erro porque se nem existe usuário autenticado 
+Repare que deste segundo modo, estamos utilizando o auth()->user() para depois encadear o can, se você pensar bem. Quando não tiver ninguém logado e clicar no botão, invés de redirecionar vai dar um erro porque se nem existe usuário autenticado
 como daria pra encadear um outro método, então para evitar isso podemos fazer um if antes verificando se tem alguém conectado e se não tiver redirecionar para o site.index
+
+******************************************************************************
+DASHBOARD COM MATERIALIZE CSS E ChartJS
+
+Vamos pegar um CSS e HTML já pronto porque não é o foco do curso
+
+Para fazer a Dashboard vamos criar na pasta admin uma view de layout e na dashboard colocamos nosso arquivo do corpo. Utilizaremos a lib Chart.js para gerar os gráficos e o Materialize para estilizar, mas também teve personalizações diretas no css.
+
+******************************************************************************
+GRÁFICOS COM DADOS DINÂMICOS
+
+Para saber quantos usuários tem no banco:
+
+    - Maneira 1 (importa o Facades\DB e usa a função de agregação count para a tabela users):
+
+        use Illuminate\Support\Facades\DB;
+        $users_qtd = DB::table('users')->count();
+
+    - Maneira 2 (importa a Model de Users, usa o all() nela e encadeia com o count):
+
+        use App\Models\User;
+        $users_qtd = User::all()->count();
+
+Vamos agora para os gráficos já quie ainda não temos pedidos e nem faturamento.
+
+Repare que a parte do script que geramos o gráfico com a lib cart.js não tem necessidade de ficar em nosso arquivo main.js porque vamos usá-lo apenas na dashboard, então vamos criar a diretiva push em nossa dashboard para empurrar essa
+parte do script lá dentro
+
+    @push('graficos')
+        <script>
+            // aqui vai o script do gráfico
+        </script>
+    @endpush
+
+    Põe o push no bashboard e o stack no Layout:
+
+    @stack('graficos')
+
+Já para os dados dos gráficos, vamos gerar no controller, mandar para a view e lá fazer o uso adequado
+
+Podemos pegar os dados para o gráfico de arquisição de usuários com um User::select() e dentro passamos COMANDOS ARBITRÁRIOS(são comandos que não vão passar por nenhum tipo de construtor de consulta), ex:
+
+Antes de tudo importa o DB: use DB;
+
+    - Ao usar o all(), where(), find()... estamos usando o Eloquent (ORM), mas também podemos usar o ORM para select, insert, update, delete...
+
+    - Vamos usar o SELECT, mas utilizando outros artifícios (Para ser mais exato é um Query Builder)
+
+        vamos passar dentro do select o DB::raw('YEAR(created_at) as ano')
+        Isso tira pegar apenas o ano da coluna created_at e depois apelidas a chave deste resultado para ano
+
+    - Mas também vamos adicionar mais um query builder que vai ser o DB::raw('COUNT(*) as total')
+
+        Desta maneira, além de pegar o ano de cadastro de todos os usuários já vamos contar quantos tem por ano (já que vamos usar o group by para agrupar os valores)
+
+    - Encadeia tudo no GroupBY
+    - E por último um orderBy para ficar mais elegante a vizualização
+
+    - E por fim, E SUPER IMPORTANTE, o nosso get()
+
+    Ficando tudo:
+
+    // Gráfico 1 - usuários
+    $usersDara = User::select(
+        DB::raw('YEAR(created_at) as ano'),
+        DB::raw('COUNT(*) as total')
+    )
+    ->groupBy('ano')
+    ->orderBy('ano','asc')
+    ->get();
+
+Criei mais um usuário e editei o ano para termos estatísticas.
+
+O resultado de nossa consulta foi vários arrays onde cada um tem um ano e um total de usuários naquele ano, porém para nosso script de gráficos nós precisamos é de um array com os anos e outros com os valores.
+
+Para pegar os valores e colocarmos em um Array usamos o forEach:
+
+    foreach ($usersData as $user) {
+        $ano[] = $user->ano;
+        $total[] = $user->total;
+    }
+
+Agora precisamos deixar no mesmo formato do chat.js, farei isso já colocando nossos valores dentro de um objeto para depois eu exportar tudo de uma vez no compact
+
+    $dataUsers = (Object)[
+        'userLabel' => "'Comparativo de cadastros de usuários'",
+        'userAno' => implode(',', $ano),
+        'userTotal' => implode(',', $total)
+    ];
+
+Depois só passar no compact e usar normalmente na view
+
+Repare que no userLabel tem aspas simples dentro da dupla, e no nosso script tínhamos label: "". Vamos passar o valor de uma forma diferente:
+
+    - label: [{!! $dataUsers->userLabel !!}]
+
+        Desta maneira o colchetes é para passarmos um array ate aí tudo bem, agora o {!! $data !!} é para ele renderizar as aspas, ou seja, as aspas simples que estão na variáveis não farão parte do título do label mas sim do código do array
+
+Agora para o próximo gráfico vamos listar as categorias e a quantidade de produtos em cada categoria
